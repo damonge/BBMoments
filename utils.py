@@ -5,9 +5,19 @@ import pysm
 from pysm.nominal import models
 import os
 from pyshtools.utils import Wigner3j
+from optparse import OptionParser
 
+# Modify lmax w3j 
+parser = OptionParser()
+parser.add_option('--lmax', dest='ellmax',  default=383, type=int,
+                  help='Set to define lmax for w3j, default=383')
+parser.add_option('--seed', dest='seed',  default=1000, type=int,
+                  help='Set to define seed, default=1000')
+parser.add_option('--nside', dest='nside', default=256, type=int,
+                  help='Set to define Nside parameter, default=256')
+(o, args) = parser.parse_args()
 
-def get_w3j(lmax=383):
+def get_w3j(lmax=o.ellmax):
     """ Calculates Wigner 3J symbols (or reads them from file if they already exist).
     """
     if os.path.isfile('data/w3j_lmax%d.npz' % lmax):
@@ -36,7 +46,8 @@ def get_w3j(lmax=383):
         np.savez("data/w3j_lmax%d" % lmax, w3j = big_w3j)
     return big_w3j
 
-    
+get_w3j(lmax=o.ellmax)
+
 def get_vector_and_covar(ls, cls, fsky=1.):
     """ Vectorizes an array of C_ells and computes their
     associated covariance matrix.
