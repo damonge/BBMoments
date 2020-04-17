@@ -45,7 +45,7 @@ def cl_mean(cl0, cl1, cl2, cl3, cl4, cl5, cl6, cl7, cl8, cl9):
     cl_mean_01234567 = np.add(cl_mean_0123, cl_mean_4567)
     cl_mean_all = np.add(cl_mean_89, cl_mean_01234567)
     return cl_mean_all / 10
-
+ 
 # Calculate the mean cls for
 #
 # Data

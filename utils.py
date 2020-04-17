@@ -36,13 +36,15 @@ def get_w3j(lmax=o.ellmax):
                     reference[:w3j_array.shape[0]] = w3j_array
                     w3j_array = reference
                 
-                w3j_array = np.concatenate([w3j[-ellmin:],w3j[:-ellmin]])
+                w3j_array = np.concatenate([w3j_array[-ellmin:],w3j_array[:-ellmin]])
                 w3j_array = w3j_array[:len(ells_w3j)]
                 w3j_array[:ellmin] = 0
-
+            
                 big_w3j[:,ell1,ell2] = w3j_array
             
         big_w3j = big_w3j**2
+        #print(big_w3j)
+        #print(np.all(big_w3j.flatten() == 0))
         np.savez("data/w3j_lmax%d" % lmax, w3j = big_w3j)
     return big_w3j
 
@@ -366,7 +368,7 @@ def get_mean_spectra(lmax, mean_pars):
             cl_cmb_bb, cl_cmb_ee)
 
 
-def get_theory_spectra(nside, mean_pars=None, moment_pars=None, delta_ell=10):
+def get_theory_spectra(nside, mean_pars=None, moment_pars=None, delta_ell=10, add_11=False, add_02=False):
     """ Generate a set of theory power spectra for set of input sky parameters.
 
     Args:
@@ -439,26 +441,29 @@ def get_theory_spectra(nside, mean_pars=None, moment_pars=None, delta_ell=10):
     x_sync = np.log(nu / mean_pars['nu0_sync'])
     f_sync_1 = x_sync * f_sync
     f_sync_2 = x_sync**2 * f_sync
-    # 1x1
-    f_dust_1x1 = np.outer(f_dust_1, f_dust_1)[:, :, None]
-    f_sync_1x1 = np.outer(f_sync_1, f_sync_1)[:, :, None]
-    C_ells_sky[:, 0, :, 0, :] += (cl_dust_1x1_ee[None, None, :] * f_dust_1x1 +
-                                  cl_sync_1x1_ee[None, None, :] * f_sync_1x1)
-    C_ells_sky[:, 1, :, 1, :] += (cl_dust_1x1_bb[None, None, :] * f_dust_1x1 +
-                                  cl_sync_1x1_bb[None, None, :] * f_sync_1x1)
-    # 0x2
-    f_dust_0x2 = np.outer(f_dust, f_dust_2)
-    f_dust_0x2 = (0.5*(f_dust_0x2 + f_dust_0x2.T))[:, :, None]
-    f_sync_0x2 = np.outer(f_sync, f_sync_2)
-    f_sync_0x2 = (0.5*(f_sync_0x2 + f_sync_0x2.T))[:, :, None]
-    C_ells_sky[:, 0, :, 0, :] += (cl_dust_0x2_ee[None, None, :] * f_dust_0x2 +
-                                  cl_sync_0x2_ee[None, None, :] * f_sync_0x2)
-    C_ells_sky[:, 1, :, 1, :] += (cl_dust_0x2_bb[None, None, :] * f_dust_0x2 +
-                                  cl_sync_0x2_bb[None, None, :] * f_sync_0x2)
+
+    if add_11:
+        # 1x1
+        f_dust_1x1 = np.outer(f_dust_1, f_dust_1)[:, :, None]
+        f_sync_1x1 = np.outer(f_sync_1, f_sync_1)[:, :, None]
+        C_ells_sky[:, 0, :, 0, :] += (cl_dust_1x1_ee[None, None, :] * f_dust_1x1 +
+                                      cl_sync_1x1_ee[None, None, :] * f_sync_1x1)
+        C_ells_sky[:, 1, :, 1, :] += (cl_dust_1x1_bb[None, None, :] * f_dust_1x1 +
+                                      cl_sync_1x1_bb[None, None, :] * f_sync_1x1)
+    if add_02:
+        # 0x2
+        f_dust_0x2 = np.outer(f_dust, f_dust_2)
+        f_dust_0x2 = (0.5*(f_dust_0x2 + f_dust_0x2.T))[:, :, None]
+        f_sync_0x2 = np.outer(f_sync, f_sync_2)
+        f_sync_0x2 = (0.5*(f_sync_0x2 + f_sync_0x2.T))[:, :, None]
+        C_ells_sky[:, 0, :, 0, :] += (cl_dust_0x2_ee[None, None, :] * f_dust_0x2 +
+                                      cl_sync_0x2_ee[None, None, :] * f_sync_0x2)
+        C_ells_sky[:, 1, :, 1, :] += (cl_dust_0x2_bb[None, None, :] * f_dust_0x2 +
+                                      cl_sync_0x2_bb[None, None, :] * f_sync_0x2)
 
     # to D_ell
     C_ells_sky *= cl2dl[None, None, None, None, :]
-
+    
     l_binned, windows, cls_binned = bin_cls(C_ells_sky,
                                             delta_ell=delta_ell)
     indices, cls_binned, cov_binned = get_vector_and_covar(l_binned,
@@ -471,7 +476,6 @@ def get_theory_spectra(nside, mean_pars=None, moment_pars=None, delta_ell=10):
                 'ind_cl': indices,
                 'windows': windows}
     return dict_out
-
 
 def get_sky_realization(nside, seed=None, mean_pars=None, moment_pars=None,
                         compute_cls=False, delta_ell=10):
