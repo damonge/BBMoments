@@ -1,16 +1,16 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-dir0 = 'simulations_only_dust/sims_ns256_seed1000_lm383'
-dir1 = 'simulations_only_dust/sims_ns256_seed1001_lm383'
-dir2 = 'simulations_only_dust/sims_ns256_seed1002_lm383'
-dir3 = 'simulations_only_dust/sims_ns256_seed1003_lm383'
-dir4 = 'simulations_only_dust/sims_ns256_seed1004_lm383'
-dir5 = 'simulations_only_dust/sims_ns256_seed1005_lm383'
-dir6 = 'simulations_only_dust/sims_ns256_seed1006_lm383'
-dir7 = 'simulations_only_dust/sims_ns256_seed1007_lm383'
-dir8 = 'simulations_only_dust/sims_ns256_seed1008_lm383'
-dir9 = 'simulations_only_dust/sims_ns256_seed1009_lm383'
+dir0 = 'simulations_only_sync/sims_ns256_seed1000_lm383'
+dir1 = 'simulations_only_sync/sims_ns256_seed1001_lm383'
+dir2 = 'simulations_only_sync/sims_ns256_seed1002_lm383'
+dir3 = 'simulations_only_sync/sims_ns256_seed1003_lm383'
+dir4 = 'simulations_only_sync/sims_ns256_seed1004_lm383'
+dir5 = 'simulations_only_sync/sims_ns256_seed1005_lm383'
+dir6 = 'simulations_only_sync/sims_ns256_seed1006_lm383'
+dir7 = 'simulations_only_sync/sims_ns256_seed1007_lm383'
+dir8 = 'simulations_only_sync/sims_ns256_seed1008_lm383'
+dir9 = 'simulations_only_sync/sims_ns256_seed1009_lm383'
 
 ells = np.loadtxt(dir0+'/ells.txt')
 
@@ -50,17 +50,14 @@ def cl_mean(cl0, cl1, cl2, cl3, cl4, cl5, cl6, cl7, cl8, cl9):
 #
 # Data
 cl_d_b0p0_mean = cl_mean(cl(dir0, 'data_p0'), cl(dir1, 'data_p0'), cl(dir2, 'data_p0'), cl(dir3, 'data_p0'), cl(dir4, 'data_p0'), cl(dir5, 'data_p0'), cl(dir6, 'data_p0'), cl(dir7, 'data_p0'), cl(dir8, 'data_p0'), cl(dir9, 'data_p0')) 
-
 cl_d_b0p2_mean = cl_mean(cl(dir0, 'data_p2'), cl(dir1, 'data_p2'), cl(dir2, 'data_p2'), cl(dir3, 'data_p2'), cl(dir4, 'data_p2'), cl(dir5, 'data_p2'), cl(dir6, 'data_p2'), cl(dir7, 'data_p2'), cl(dir8, 'data_p2'), cl(dir9, 'data_p2'))
 #
 # Theory
 cl_t_b0p0_mean = cl_mean(cl(dir0, 'theory_p0'), cl(dir1, 'theory_p0'), cl(dir2, 'theory_p0'), cl(dir3, 'theory_p0'), cl(dir4, 'theory_p0'), cl(dir5, 'theory_p0'), cl(dir6, 'theory_p0'), cl(dir7, 'theory_p0'), cl(dir8, 'theory_p0'), cl(dir9, 'theory_p0'))
-
 cl_t_b0p2_mean = cl_mean(cl(dir0, 'theory_p2'), cl(dir1, 'theory_p2'), cl(dir2, 'theory_p2'), cl(dir3, 'theory_p2'), cl(dir4, 'theory_p2'), cl(dir5, 'theory_p2'), cl(dir6, 'theory_p2'), cl(dir7, 'theory_p2'), cl(dir8, 'theory_p2'), cl(dir9, 'theory_p2'))
 #
 # Errors
 err_b0p0_mean = cl_mean(cl(dir0, 'err_p0'), cl(dir1, 'err_p0'), cl(dir2, 'err_p0'), cl(dir3, 'err_p0'), cl(dir4, 'err_p0'), cl(dir5, 'err_p0'), cl(dir6, 'err_p0'), cl(dir7, 'err_p0'), cl(dir8, 'err_p0'), cl(dir9, 'err_p0'))
-
 err_b0p2_mean = cl_mean(cl(dir0, 'err_p2'), cl(dir1, 'err_p2'), cl(dir2, 'err_p2'), cl(dir3, 'err_p2'), cl(dir4, 'err_p2'), cl(dir5, 'err_p2'), cl(dir6, 'err_p2'), cl(dir7, 'err_p2'), cl(dir8, 'err_p2'), cl(dir9, 'err_p2'))
 
 # Plot stuff
@@ -79,10 +76,10 @@ for i_1 in range(6):
                      fmt='r.', label='0.2 beta variations')
         ax[i_1,i_2].plot(ells, cl_t_b0p2_mean[:,i_1,i_2], 'r--')
         ax[i_1,i_2].set_yscale('log')
-        ax[i_1,i_2].set_xscale('log') 
+        #ax[i_1,i_2].set_xscale('log') 
         ax[i_1,i_2].set_xlabel(str(r'$\ell$'), fontsize=8)
         ax[i_1,i_2].set_ylabel(str(r'$D_\ell$'), fontsize=8)
-plt.savefig(f'plots/mean_all_loglog.pdf')
+plt.savefig(f'plots/cls_only_sync_mean10sims/mean_all_logy.pdf')
 #
 # Single plots
 for i_1 in range(6):  
@@ -97,7 +94,8 @@ for i_1 in range(6):
         plt.plot(ells, cl_t_b0p2_mean[:,i_1,i_2], 'r--')
         plt.xlabel(r'$\ell$', fontsize=16)
         plt.ylabel(r'$D_\ell$', fontsize=16)
-        plt.loglog()
+        #plt.yscale('log')
+        #plt.xscale('log')
         plt.legend()
-        plt.savefig(f'plots/mean_only_dust_{i_1}_{i_2}.png')
+        plt.savefig(f'plots/cls_only_sync_mean10sims/mean_only_sync_{i_1}_{i_2}_logy.pdf')
 

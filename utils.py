@@ -5,19 +5,9 @@ import pysm
 from pysm.nominal import models
 import os
 from pyshtools.utils import Wigner3j
-from optparse import OptionParser
+from noise_calc import Simons_Observatory_V3_SA_noise,Simons_Observatory_V3_SA_beams
 
-# Modify lmax w3j 
-parser = OptionParser()
-parser.add_option('--lmax', dest='ellmax',  default=383, type=int,
-                  help='Set to define lmax for w3j, default=383')
-parser.add_option('--seed', dest='seed',  default=1000, type=int,
-                  help='Set to define seed, default=1000')
-parser.add_option('--nside', dest='nside', default=256, type=int,
-                  help='Set to define Nside parameter, default=256')
-(o, args) = parser.parse_args()
-
-def get_w3j(lmax=o.ellmax):
+def get_w3j(lmax=383):
     """ Calculates Wigner 3J symbols (or reads them from file if they already exist).
     """
     if os.path.isfile('data/w3j_lmax%d.npz' % lmax):
@@ -43,12 +33,8 @@ def get_w3j(lmax=o.ellmax):
                 big_w3j[:,ell1,ell2] = w3j_array
             
         big_w3j = big_w3j**2
-        #print(big_w3j)
-        #print(np.all(big_w3j.flatten() == 0))
         np.savez("data/w3j_lmax%d" % lmax, w3j = big_w3j)
     return big_w3j
-
-get_w3j(lmax=o.ellmax)
 
 def get_vector_and_covar(ls, cls, fsky=1.):
     """ Vectorizes an array of C_ells and computes their
@@ -267,6 +253,8 @@ def get_default_params():
       - 'temp_dust': dust temperature.
       - 'include_XXX': whether to include component XXX, where
           XXX is CMB, sync or dust.
+      - 'include_Y': whether to include Y polarization, where 
+          Y is E or B. By default, B is always included. 
 
     The moment parameters are:
       - 'amp_beta_dust': delta_beta power spectrum amplitude
@@ -293,9 +281,13 @@ def get_default_params():
                  'nu0_sync': 23.,
                  'nu0_sync_def': 23.,
                  'beta_sync': -3.,
+                 'A_lens' : 1,
                  'include_CMB': True,
                  'include_dust': True,
-                 'include_sync': True}
+                 'include_sync': True,
+                 'include_E': True,
+                 'include_B': True,
+    }
     moment_pars = {'amp_beta_sync': 0.,
                    'gamma_beta_sync': -3.,
                    'l0_beta_sync': 80.,
@@ -358,6 +350,10 @@ def get_mean_spectra(lmax, mean_pars):
     dlte=np.zeros(len(ells)); dlte[l]=dte[msk]  
     cl_cmb_bb=dlbb * dl2cl
     cl_cmb_ee=dlee * dl2cl
+    if not mean_pars['include_E']:
+        cl_cmb_ee *= 0 
+    if not mean_pars['include_B']:
+        cl_cmb_bb *= 0
     if not mean_pars['include_CMB']:
         cl_cmb_bb *= 0
         cl_cmb_ee *= 0
@@ -496,7 +492,8 @@ def get_sky_realization(nside, seed=None, mean_pars=None, moment_pars=None,
         A dictionary containing the different component maps,
         spectral index maps and frequency maps.
         If `compute_cls=True`, then the dictionary will also
-        contain power spectrum information.
+        contain information of the signal, noise and total 
+        (i.e. signal + noise) power spectra. 
     """
     nu = get_freqs()
     npix = hp.nside2npix(nside)
@@ -606,3 +603,138 @@ def get_sky_realization(nside, seed=None, mean_pars=None, moment_pars=None,
         dict_out['windows'] = windows
 
     return dict_out
+
+def create_noise_splits(nside, maps_signal, seed=None, add_mask=False, write_splits=False,
+                        compute_cls=False, mean_pars=None, moment_pars=None, delta_ell=10): 
+    """ Generate instrumental noise realizations.
+
+    Args:
+        nside: HEALPix resolution parameter.
+        maps_signal: frequency maps of the signal, see 'get_sky_realization'.
+        seed: seed to be used (if `None`, then a random seed will
+            be used).
+        add_mask: return the masked splits? Default: False. 
+        write_splits: save splits to fits file? Default: False. 
+        mean_pars: mean parameters (see `get_default_params`).
+            If `None`, then a default set will be used.
+        moment_pars: mean parameters (see `get_default_params`).
+            If `None`, then a default set will be used.
+        compute_cls: return also the power spectra? Default: False.
+        delta_ell: bandpower size to use if compute_cls is True.
+
+    Returns:
+        A dictionary containing the noise maps, and the observed
+        splits.
+        If `compute_cls=True`, then the dictionary will also
+        contain power spectra information.
+    """
+    if seed is not None:
+        np.random.seed(seed)
+    nu = get_freqs()
+    nfreq = len(nu)
+    lmax = 3*nside-1
+    ells = np.arange(lmax+1)
+    nells = len(ells)
+    sens=1
+    knee=1
+    ylf=1
+    fsky=0.1
+    dl2cl = np.ones(len(ells))
+    dl2cl[1:] = 2*np.pi/(ells[1:]*(ells[1:]+1.))
+    cl2dl = (ells*(ells+1.))/(2*np.pi)
+    nell=np.zeros([nfreq,lmax+1])
+    _,nell[:,2:],_=Simons_Observatory_V3_SA_noise(sens,knee,ylf,fsky,lmax+1,1)
+    nell*=cl2dl[None,:]
+
+    npol = 2
+    nmaps = nfreq*npol
+    N_ells_sky = np.zeros([nfreq, npol, nfreq, npol, nells])
+    for i,n in enumerate(nu):
+        for j in [0,1]:
+            N_ells_sky[i, j, i, j, :] = nell[i]
+
+    # Noise maps
+    nsplits = 4
+    npix = hp.nside2npix(nside)
+    maps_noise = np.zeros([nsplits, nfreq, npol, npix])
+    maps_noise_tot = np.zeros([nfreq,npol,npix])
+    for s in range(nsplits):
+        for i in range(nfreq):
+            nell_ee = N_ells_sky[i, 0, i, 0, :]*dl2cl * nsplits
+            nell_bb = N_ells_sky[i, 1, i, 1, :]*dl2cl * nsplits
+            nell_00 = nell_ee * 0 * nsplits
+            maps_noise[s, i, :, :] = hp.synfast([nell_00, nell_ee, nell_bb, nell_00, nell_00, nell_00], nside, pol=False, new=True)[1:]
+            maps_noise_tot[i, :, :] = hp.synfast([nell_00, nell_ee, nell_bb, nell_00, nell_00, nell_00], nside, pol=False, new=True)[1:] 
+    
+    if add_mask:
+        nhits=hp.ud_grade(hp.read_map("norm_nHits_SA_35FOV.fits",  verbose=False),nside_out=nside)
+        nhits/=np.amax(nhits) 
+        fsky_msk=np.mean(nhits) 
+        nhits_binary=np.zeros_like(nhits) 
+        nhits_binary[nhits>1E-3]=1
+    
+    obs_splits = [] 
+    for s in range(nsplits):
+        split = (maps_signal[:,:,:]+maps_noise_tot[:,:,:])
+        if add_mask:
+            split *= nhits_binary
+        split.reshape([nmaps,npix])
+        obs_splits.append(split)
+    obs_splits = np.array(obs_splits)
+
+    # Save splits to file
+    if write_splits:
+        for s in range(nsplits):
+            if add_mask:
+                hp.write_map("data/obs_split%dof%d.fits.gz" % (s+1, nsplits),
+                         ((maps_signal[:,:,:]+maps_noise[s,:,:,:])*nhits_binary).reshape([nmaps,npix]),overwrite=True)
+            else:
+                hp.write_map("data/obs_split%dof%d.fits.gz" % (s+1, nsplits),
+                             (maps_signal[:,:,:]+maps_noise[s,:,:,:]).reshape([nmaps,npix]),overwrite=True)
+
+
+    dict_out = {'maps_noise': maps_noise,
+                'splits': obs_splits}
+
+    if compute_cls:
+        cls_unbinned_signal = map2cl(maps_signal+maps_noise[0,:,:,:]) - N_ells_sky
+        cls_unbinned_noise = N_ells_sky
+        if mean_pars is None:
+            mean_pars, _ = get_default_params()
+        if moment_pars is None:
+            _, moment_pars = get_default_params()
+        C_ells_sky = get_theory_spectra(nside, mean_pars, moment_pars)
+        cls_unbinned_total = C_ells_sky['cls_unbinned'] + N_ells_sky
+        l_binned, windows, cls_binned_signal = bin_cls(cls_unbinned_signal,
+                                                delta_ell=delta_ell)
+        indices, cls_binned_signal, cov_binned_signal = get_vector_and_covar(l_binned,
+                                                                             cls_binned_signal)
+        _, _, cls_binned_noise = bin_cls(cls_unbinned_noise,
+                                                delta_ell=delta_ell)
+        _, cls_binned_noise, cov_binned_noise = get_vector_and_covar(l_binned,
+                                                                     cls_binned_noise)
+        _, _, cls_binned_total = bin_cls(cls_unbinned_total,
+                                                delta_ell=delta_ell)
+        _, cls_binned_total, cov_binned_total = get_vector_and_covar(l_binned,
+                                                                     cls_binned_total)
+        dict_out['ls_unbinned'] = ells
+        dict_out['ls_binned'] = l_binned
+        dict_out['ind_cl'] = indices
+        dict_out['windows'] = windows
+
+        dict_out['cls_unbinned_signal'] = cls_unbinned_signal
+        dict_out['cls_binned_signal'] = cls_binned_signal
+        dict_out['cov_binned_signal'] = cov_binned_signal
+
+        dict_out['cls_unbinned_noise'] = cls_unbinned_noise
+        dict_out['cls_binned_noise'] = cls_binned_noise
+        dict_out['cov_binned_noise'] = cov_binned_noise
+
+        dict_out['cls_unbinned_total'] = cls_unbinned_total
+        dict_out['cls_binned_total'] = cls_binned_total
+        dict_out['cov_binned_total'] = cov_binned_total
+
+    return (dict_out)
+
+
+
