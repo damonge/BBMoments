@@ -604,29 +604,19 @@ def get_sky_realization(nside, seed=None, mean_pars=None, moment_pars=None,
 
     return dict_out
 
-def create_noise_splits(nside, maps_signal, seed=None, add_mask=False, write_splits=False,
-                        compute_cls=False, mean_pars=None, moment_pars=None, delta_ell=10): 
+def create_noise_splits(nside, seed=None, add_mask=False):
     """ Generate instrumental noise realizations.
 
     Args:
         nside: HEALPix resolution parameter.
-        maps_signal: frequency maps of the signal, see 'get_sky_realization'.
         seed: seed to be used (if `None`, then a random seed will
             be used).
         add_mask: return the masked splits? Default: False. 
-        write_splits: save splits to fits file? Default: False. 
-        mean_pars: mean parameters (see `get_default_params`).
-            If `None`, then a default set will be used.
-        moment_pars: mean parameters (see `get_default_params`).
-            If `None`, then a default set will be used.
-        compute_cls: return also the power spectra? Default: False.
-        delta_ell: bandpower size to use if compute_cls is True.
 
     Returns:
-        A dictionary containing the noise maps, and the observed
-        splits.
-        If `compute_cls=True`, then the dictionary will also
-        contain power spectra information.
+        A dictionary containing the noise maps.
+        If `add_mask=True`, then the masked noise maps will
+        be returned.
     """
     if seed is not None:
         np.random.seed(seed)
@@ -664,7 +654,6 @@ def create_noise_splits(nside, maps_signal, seed=None, add_mask=False, write_spl
             nell_bb = N_ells_sky[i, 1, i, 1, :]*dl2cl * nsplits
             nell_00 = nell_ee * 0 * nsplits
             maps_noise[s, i, :, :] = hp.synfast([nell_00, nell_ee, nell_bb, nell_00, nell_00, nell_00], nside, pol=False, new=True)[1:]
-            maps_noise_tot[i, :, :] = hp.synfast([nell_00, nell_ee, nell_bb, nell_00, nell_00, nell_00], nside, pol=False, new=True)[1:] 
     
     if add_mask:
         nhits=hp.ud_grade(hp.read_map("norm_nHits_SA_35FOV.fits",  verbose=False),nside_out=nside)
@@ -673,67 +662,8 @@ def create_noise_splits(nside, maps_signal, seed=None, add_mask=False, write_spl
         nhits_binary=np.zeros_like(nhits) 
         nhits_binary[nhits>1E-3]=1
     
-    obs_splits = [] 
-    for s in range(nsplits):
-        split = (maps_signal[:,:,:]+maps_noise_tot[:,:,:])
-        if add_mask:
-            split *= nhits_binary
-        split.reshape([nmaps,npix])
-        obs_splits.append(split)
-    obs_splits = np.array(obs_splits)
-
-    # Save splits to file
-    if write_splits:
-        for s in range(nsplits):
-            if add_mask:
-                hp.write_map("data/obs_split%dof%d.fits.gz" % (s+1, nsplits),
-                         ((maps_signal[:,:,:]+maps_noise[s,:,:,:])*nhits_binary).reshape([nmaps,npix]),overwrite=True)
-            else:
-                hp.write_map("data/obs_split%dof%d.fits.gz" % (s+1, nsplits),
-                             (maps_signal[:,:,:]+maps_noise[s,:,:,:]).reshape([nmaps,npix]),overwrite=True)
-
-
-    dict_out = {'maps_noise': maps_noise,
-                'splits': obs_splits}
-
-    if compute_cls:
-        cls_unbinned_signal = map2cl(maps_signal+maps_noise[0,:,:,:]) - N_ells_sky
-        cls_unbinned_noise = N_ells_sky
-        if mean_pars is None:
-            mean_pars, _ = get_default_params()
-        if moment_pars is None:
-            _, moment_pars = get_default_params()
-        C_ells_sky = get_theory_spectra(nside, mean_pars, moment_pars)
-        cls_unbinned_total = C_ells_sky['cls_unbinned'] + N_ells_sky
-        l_binned, windows, cls_binned_signal = bin_cls(cls_unbinned_signal,
-                                                delta_ell=delta_ell)
-        indices, cls_binned_signal, cov_binned_signal = get_vector_and_covar(l_binned,
-                                                                             cls_binned_signal)
-        _, _, cls_binned_noise = bin_cls(cls_unbinned_noise,
-                                                delta_ell=delta_ell)
-        _, cls_binned_noise, cov_binned_noise = get_vector_and_covar(l_binned,
-                                                                     cls_binned_noise)
-        _, _, cls_binned_total = bin_cls(cls_unbinned_total,
-                                                delta_ell=delta_ell)
-        _, cls_binned_total, cov_binned_total = get_vector_and_covar(l_binned,
-                                                                     cls_binned_total)
-        dict_out['ls_unbinned'] = ells
-        dict_out['ls_binned'] = l_binned
-        dict_out['ind_cl'] = indices
-        dict_out['windows'] = windows
-
-        dict_out['cls_unbinned_signal'] = cls_unbinned_signal
-        dict_out['cls_binned_signal'] = cls_binned_signal
-        dict_out['cov_binned_signal'] = cov_binned_signal
-
-        dict_out['cls_unbinned_noise'] = cls_unbinned_noise
-        dict_out['cls_binned_noise'] = cls_binned_noise
-        dict_out['cov_binned_noise'] = cov_binned_noise
-
-        dict_out['cls_unbinned_total'] = cls_unbinned_total
-        dict_out['cls_binned_total'] = cls_binned_total
-        dict_out['cov_binned_total'] = cov_binned_total
-
+    dict_out = {'maps_noise': maps_noise}
+    
     return (dict_out)
 
 
