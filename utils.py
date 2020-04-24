@@ -647,7 +647,6 @@ def create_noise_splits(nside, seed=None, add_mask=False):
     nsplits = 4
     npix = hp.nside2npix(nside)
     maps_noise = np.zeros([nsplits, nfreq, npol, npix])
-    maps_noise_tot = np.zeros([nfreq,npol,npix])
     for s in range(nsplits):
         for i in range(nfreq):
             nell_ee = N_ells_sky[i, 0, i, 0, :]*dl2cl * nsplits
