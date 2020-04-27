@@ -254,7 +254,7 @@ def get_default_params():
       - 'include_XXX': whether to include component XXX, where
           XXX is CMB, sync or dust.
       - 'include_Y': whether to include Y polarization, where 
-          Y is E or B. By default, B is always included. 
+          Y is E or B. 
 
     The moment parameters are:
       - 'amp_beta_dust': delta_beta power spectrum amplitude
@@ -324,6 +324,10 @@ def get_mean_spectra(lmax, mean_pars):
                  ((ells+1E-5) / 80.)**mean_pars['alpha_dust_EE']
     cl_dust_bb = dl_dust_bb * dl2cl
     cl_dust_ee = dl_dust_ee * dl2cl
+    if not mean_pars['include_E']:
+        cl_dust_ee *= 0 
+    if not mean_pars['include_B']:
+        cl_dust_bb *= 0
     if not mean_pars['include_dust']:
         cl_dust_bb *= 0
         cl_dust_ee *= 0
@@ -335,6 +339,10 @@ def get_mean_spectra(lmax, mean_pars):
                  ((ells+1E-5) / 80.)**mean_pars['alpha_sync_EE']
     cl_sync_bb = dl_sync_bb * dl2cl
     cl_sync_ee = dl_sync_ee * dl2cl
+    if not mean_pars['include_E']:
+        cl_sync_ee *= 0 
+    if not mean_pars['include_B']:
+        cl_sync_bb *= 0
     if not mean_pars['include_sync']:
         cl_sync_bb *= 0
         cl_sync_ee *= 0
@@ -604,7 +612,7 @@ def get_sky_realization(nside, seed=None, mean_pars=None, moment_pars=None,
 
     return dict_out
 
-def create_noise_splits(nside, seed=None, add_mask=False):
+def create_noise_splits(nside, add_mask=False):
     """ Generate instrumental noise realizations.
 
     Args:
@@ -618,8 +626,6 @@ def create_noise_splits(nside, seed=None, add_mask=False):
         If `add_mask=True`, then the masked noise maps will
         be returned.
     """
-    if seed is not None:
-        np.random.seed(seed)
     nu = get_freqs()
     nfreq = len(nu)
     lmax = 3*nside-1
@@ -642,7 +648,7 @@ def create_noise_splits(nside, seed=None, add_mask=False):
     for i,n in enumerate(nu):
         for j in [0,1]:
             N_ells_sky[i, j, i, j, :] = nell[i]
-
+        
     # Noise maps
     nsplits = 4
     npix = hp.nside2npix(nside)
@@ -652,8 +658,8 @@ def create_noise_splits(nside, seed=None, add_mask=False):
             nell_ee = N_ells_sky[i, 0, i, 0, :]*dl2cl * nsplits
             nell_bb = N_ells_sky[i, 1, i, 1, :]*dl2cl * nsplits
             nell_00 = nell_ee * 0 * nsplits
-            maps_noise[s, i, :, :] = hp.synfast([nell_00, nell_ee, nell_bb, nell_00, nell_00, nell_00], nside, pol=False, new=True)[1:]
-    
+            maps_noise[s, i, :, :] = hp.synfast([nell_00, nell_ee, nell_bb, nell_00, nell_00, nell_00], nside, pol=False, new=True)[1:]            
+            
     if add_mask:
         nhits=hp.ud_grade(hp.read_map("norm_nHits_SA_35FOV.fits",  verbose=False),nside_out=nside)
         nhits/=np.amax(nhits) 
@@ -661,8 +667,12 @@ def create_noise_splits(nside, seed=None, add_mask=False):
         nhits_binary=np.zeros_like(nhits) 
         nhits_binary[nhits>1E-3]=1
     
-    dict_out = {'maps_noise': maps_noise}
-    
+    dict_out = {'maps_noise': maps_noise,
+                'N_ells_input': N_ells_sky,
+                'nell_ee': nell_ee,
+                'nell_bb': nell_bb,
+                'nell_00': nell_00}
+
     return (dict_out)
 
 

@@ -18,6 +18,10 @@ parser.add_option('--include-sync', dest='include_sync', default=True, action='s
                   help='Set to include synchrotron to simulation, default=True.')
 parser.add_option('--include-dust', dest='include_dust', default=True, action='store_true',
                   help='Set to include dust to simulation, default=True.')
+parser.add_option('--include-E', dest='include_E', default=False, action='store_true',
+                  help='Set to include E-modes to simulation, default=False.')
+parser.add_option('--include-B', dest='include_B', default=True, action='store_true',
+                  help='Set to include B-modes to simulation, default=True.')
 (o, args) = parser.parse_args()
 
 nside = o.nside
@@ -34,17 +38,23 @@ if o.std != 0. :
     amp_beta_dust = ut.get_delta_beta_amp(sigma=o.std, gamma=-3.)
     moment_p['amp_beta_dust'] = amp_beta_dust
 
+# Define parameters for the simulation:
 # Which components do we want to include?
 mean_p['include_CMB'] = o.include_cmb
 mean_p['include_sync'] = o.include_sync
 mean_p['include_dust'] = o.include_dust
+# Which polarizations do we want to include?
+mean_p['include_E'] = o.include_E
+mean_p['include_B'] = o.include_B
 
-# Simulation, theory prediction and noise
-sim = ut.get_sky_realization(o.nside, seed=o.seed, mean_pars=mean_p,
-                                   moment_pars=moment_p, compute_cls=True)
+# Theory prediction, simulation and noise
 thr = ut.get_theory_spectra(o.nside, mean_pars=mean_p,
                                   moment_pars=moment_p, add_11=True, add_02=True)
-noi = ut.create_noise_splits(o.nside, seed=o.seed)
+
+sim = ut.get_sky_realization(o.nside, seed=o.seed, mean_pars=mean_p,
+                                   moment_pars=moment_p, compute_cls=True)
+
+noi = ut.create_noise_splits(o.nside)
 
 # Define maps signal and noise
 mps_signal = sim['freq_maps']
