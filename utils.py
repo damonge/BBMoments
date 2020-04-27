@@ -667,12 +667,7 @@ def create_noise_splits(nside, add_mask=False):
         nhits_binary=np.zeros_like(nhits) 
         nhits_binary[nhits>1E-3]=1
     
-    dict_out = {'maps_noise': maps_noise,
-                'N_ells_input': N_ells_sky,
-                'nell_ee': nell_ee,
-                'nell_bb': nell_bb,
-                'nell_00': nell_00}
-
+    dict_out = {'maps_noise': maps_noise}
     return (dict_out)
 
 
