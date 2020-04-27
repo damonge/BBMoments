@@ -50,10 +50,8 @@ mean_p['include_B'] = o.include_B
 # Theory prediction, simulation and noise
 thr = ut.get_theory_spectra(o.nside, mean_pars=mean_p,
                                   moment_pars=moment_p, add_11=True, add_02=True)
-
 sim = ut.get_sky_realization(o.nside, seed=o.seed, mean_pars=mean_p,
                                    moment_pars=moment_p, compute_cls=True)
-
 noi = ut.create_noise_splits(o.nside)
 
 # Define maps signal and noise
