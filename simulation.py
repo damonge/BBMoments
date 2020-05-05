@@ -30,6 +30,8 @@ parser.add_option('--remove-E', dest='include_E', default=True, action='store_fa
                   help='Set to remove E-modes from simulation, default=True.')
 parser.add_option('--remove-B', dest='include_B', default=True, action='store_false',
                   help='Set to remove B-modes from simulation, default=True.')
+parser.add_option('--mask', dest='add_mask', default=False, action='store_true',
+                  help='Set to add mask to observational splits.')
 (o, args) = parser.parse_args()
 
 nside = o.nside
@@ -41,6 +43,7 @@ if o.dirname == 'none':
     o.dirname+= "_stdd%d_stds%d"%(o.std_dust*100, o.std_sync*100)
     o.dirname+= "_gdm%.1lf_gsm%.1lf"%(-o.gamma_dust, -o.gamma_sync)
 os.system('mkdir -p ' + o.dirname)
+print(dirname)
 
 # Decide whether spectral index is constant or varying
 mean_p, moment_p = ut.get_default_params()
@@ -90,8 +93,11 @@ hp.write_map(o.dirname+"/maps_sky_signal.fits", mps_signal.reshape([nmaps,npix])
 # Create splits
 nsplits = len(mps_noise)
 for s in range(nsplits):
+    maps_signoi = mps_signal[:,:,:]+mps_noise[s,:,:,:]
+    if o.add_mask:
+        maps_signoi *= noi['nhits']
     hp.write_map(o.dirname+"/obs_split%dof%d.fits.gz" % (s+1, nsplits),
-                 (mps_signal[:,:,:]+mps_noise[s,:,:,:]).reshape([nmaps,npix]),
+                 (maps_signoi).reshape([nmaps,npix]),
                  overwrite=True)
 
 # Write splits list
