@@ -95,7 +95,7 @@ nsplits = len(mps_noise)
 for s in range(nsplits):
     maps_signoi = mps_signal[:,:,:]+mps_noise[s,:,:,:]
     if o.add_mask:
-        maps_signoi *= noi['nhits']
+        maps_signoi *= noi['mask']
     hp.write_map(o.dirname+"/obs_split%dof%d.fits.gz" % (s+1, nsplits),
                  (maps_signoi).reshape([nmaps,npix]),
                  overwrite=True)
