@@ -12,7 +12,13 @@ parser.add_option('--seed', dest='seed',  default=1000, type=int,
                   help='Set to define seed, default=1000')
 parser.add_option('--nside', dest='nside', default=256, type=int,
                   help='Set to define Nside parameter, default=256')
-parser.add_option('--std', dest='std', default=0., type=float,
+parser.add_option('--std-dust', dest='std_dust', default=0., type=float,
+                  help='')
+parser.add_option('--std-sync', dest='std_sync', default=0., type=float,
+                  help='')
+parser.add_option('--gamma-dust', dest='gamma_dust', default=-3., type=float,
+                  help='')
+parser.add_option('--gamma-sync', dest='gamma_sync', default=-3., type=float,
                   help='')
 parser.add_option('--remove-cmb', dest='include_cmb', default=True, action='store_false',
                   help='Set to remove CMB from simulation, default=True.')
@@ -30,15 +36,24 @@ nside = o.nside
 seed = o.seed
 
 if o.dirname == 'none':
-    o.dirname = "/mnt/extraspace/damonge/Simulations_Moments/sim_ns%d_seed%d_std%d"%(o.nside, o.seed, o.std*100)
+    o.dirname = "/mnt/extraspace/damonge/Simulations_Moments/sim_ns%d" % o.nside
+    o.dirname+= "_seed%d" % o.seed
+    o.dirname+= "_stdd%d_stds%d"%(o.std_dust*100, o.std_sync*100)
+    o.dirname+= "_gdm%.1lf_gsm%.1lf"%(-o.gamma_dust, -o.gamma_sync)
 os.system('mkdir -p ' + o.dirname)
 
 # Decide whether spectral index is constant or varying
 mean_p, moment_p = ut.get_default_params()
-if o.std > 0. :
+if o.std_dust > 0. :
     # Spectral index variantions for dust with std
-    amp_beta_dust = ut.get_delta_beta_amp(sigma=o.std, gamma=-3.)
+    amp_beta_dust = ut.get_delta_beta_amp(sigma=o.std_dust, gamma=o.gamma_dust)
     moment_p['amp_beta_dust'] = amp_beta_dust
+    moment_p['gamma_beta_dust'] = o.gamma_dust
+if o.std_sync > 0. :
+    # Spectral index variantions for sync with std
+    amp_beta_sync = ut.get_delta_beta_amp(sigma=o.std_sync, gamma=o.gamma_sync)
+    moment_p['amp_beta_sync'] = amp_beta_sync
+    moment_p['gamma_beta_sync'] = o.gamma_sync
 
 # Define parameters for the simulation:
 # Which components do we want to include?
