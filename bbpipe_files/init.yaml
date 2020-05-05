@@ -1,0 +1,28 @@
+modules: bbpower
+
+launcher: local
+
+stages:
+- name: BBPowerSpecter
+  nprocess: 1
+- name: BBPowerSummarizer
+  nprocess: 1
+- name: BBCompSep
+  nprocess: 1
+- name: BBPlotter
+  nprocess: 1
+
+inputs:
+  bandpasses_list: data/bandpasses.txt
+  beams_list: data/beams.txt
+  cells_fiducial: data/cells_model.sacc
+  masks_apodized: data/mask.fits
+  sims_list: data/sims_list.txt
+  splits_list: data/splits_list.txt
+
+config: outputs/config.yaml
+
+log_dir: outputs
+output_dir: outputs
+pipeline_log: outputs/log.txt
+resume: false

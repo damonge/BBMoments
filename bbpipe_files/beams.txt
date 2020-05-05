@@ -1,0 +1,6 @@
+/users/damonge/SO/BBMoments/sims_gauss_fullsky_nosiv_ns256_csd/s1000/beam_0.txt
+/users/damonge/SO/BBMoments/sims_gauss_fullsky_nosiv_ns256_csd/s1000/beam_1.txt
+/users/damonge/SO/BBMoments/sims_gauss_fullsky_nosiv_ns256_csd/s1000/beam_2.txt
+/users/damonge/SO/BBMoments/sims_gauss_fullsky_nosiv_ns256_csd/s1000/beam_3.txt
+/users/damonge/SO/BBMoments/sims_gauss_fullsky_nosiv_ns256_csd/s1000/beam_4.txt
+/users/damonge/SO/BBMoments/sims_gauss_fullsky_nosiv_ns256_csd/s1000/beam_5.txt

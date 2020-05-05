@@ -94,12 +94,13 @@ def bin_cls(cls, delta_ell=10):
     return l_eff, W, cl_binned
 
 
-def map2cl(maps, iter=0):
+def map2cl(maps, maps2=None, iter=0):
     """ Returns an array with all auto- and cross-correlations
     for a given set of Q/U frequency maps.
 
     Args:
         maps: set of frequency maps with shape [nfreq, 2, npix].
+        maps2: set of frequency maps with shape [nfreq, 2, npix] to cross-correlate with.
         iter: iter parameter for anafast (default 0).
 
     Returns:
@@ -110,6 +111,8 @@ def map2cl(maps, iter=0):
     nls = 3*nside
     ells = np.arange(nls)
     cl2dl = ells*(ells+1)/(2*np.pi)
+    if maps2 is None:
+        maps2 = maps
 
     cl_out = np.zeros([nfreq, npol, nfreq, npol, nls])
     for i in range(nfreq):
@@ -117,7 +120,7 @@ def map2cl(maps, iter=0):
         m1[1:,:]=maps[i, :, :]
         for j in range(i,nfreq):
             m2 = np.zeros([3, npix])
-            m2[1:,:]=maps[j, :, :]
+            m2[1:,:]=maps2[j, :, :]
 
             cl = hp.anafast(m1, m2, iter=0)
             cl_out[i, 0, j, 0] = cl[1] * cl2dl
@@ -372,6 +375,65 @@ def get_mean_spectra(lmax, mean_pars):
             cl_cmb_bb, cl_cmb_ee)
 
 
+def get_theory_sacc(nside, mean_pars=None, moment_pars=None, delta_ell=10, add_11=False, add_02=False):
+    """ Generate a SACC object containing a set of theory power spectra.
+
+        nside: HEALPix resolution parameter.
+        seed: seed to be used (if `None`, then a random seed will
+            be used).
+        mean_pars: mean parameters (see `get_default_params`).
+            If `None`, then a default set will be used.
+        moment_pars: mean parameters (see `get_default_params`).
+            If `None`, then a default set will be used.
+        delta_ell: bandpower size to use (default 10).
+
+    Returns:
+        A dictionary containing power spectrum information.
+    """
+    import sacc
+    nus = get_freqs()
+    nfreq = len(nus)
+    th = get_theory_spectra(nside, mean_pars=mean_pars, moment_pars=moment_pars,
+                            delta_ell=delta_ell, add_11=add_11, add_02=add_02)
+    l_eff = th['ls_binned']
+
+    # Binning
+    typ, ell, t1, q1, t2, q2 = [], [], [], [], [], []
+    for b1 in range(nfreq):
+        for b2 in range(b1, nfreq):
+            if (b1==b2):
+                types = ['EE', 'EB', 'BB']
+            else:
+                types = ['EE', 'EB', 'BE', 'BB']
+            for ty in types:
+                for il, l in enumerate(l_eff):
+                    ell.append(l)
+                    typ.append(ty)
+                    t1.append(b1)
+                    t2.append(b2)
+                    q1.append('C')
+                    q2.append('C')
+    bnn = sacc.Binning(typ,ell,t1,q1,t2,q1)
+
+    # Tracers
+    trs = []
+    for inu, nu in enumerate(nus):
+        fs = np.array([nu-1., nu, nu+1])
+        bs = np.array([0., 1., 0.])
+        T=sacc.Tracer('band%d'%(inu+1), 'CMBP',
+                      fs, bs, exp_sample='SO_SAT')
+        T.addColumns({'dnu':np.ones(3)})
+        trs.append(T)
+
+    # SACC
+    clv = th['cls_binned'].flatten()
+    sacc_mean = sacc.MeanVec(clv)
+    sacc_prec = sacc.Precision(matrix=th['cov_binned'].reshape([len(clv),len(clv)]),
+                               is_covariance=True,mode="dense")
+    s = sacc.SACC(trs, bnn, mean=sacc_mean, precision=sacc_prec)
+    return s
+
+
 def get_theory_spectra(nside, mean_pars=None, moment_pars=None, delta_ell=10, add_11=False, add_02=False):
     """ Generate a set of theory power spectra for set of input sky parameters.
 
@@ -612,7 +674,8 @@ def get_sky_realization(nside, seed=None, mean_pars=None, moment_pars=None,
 
     return dict_out
 
-def create_noise_splits(nside, add_mask=False):
+def create_noise_splits(nside, add_mask=False, sens=1, knee=1, ylf=1,
+                        fsky=0.1, nsplits=4):
     """ Generate instrumental noise realizations.
 
     Args:
@@ -620,6 +683,11 @@ def create_noise_splits(nside, add_mask=False):
         seed: seed to be used (if `None`, then a random seed will
             be used).
         add_mask: return the masked splits? Default: False. 
+        sens: sensitivity (0, 1 or 2)
+        knee: knee type (0 or 1)
+        ylf: number of years for the LF tube.
+        fsky: sky fraction to use for the noise realizations.
+        nsplits: number of splits (i.e. independent noise realizations).
 
     Returns:
         A dictionary containing the noise maps.
@@ -631,10 +699,6 @@ def create_noise_splits(nside, add_mask=False):
     lmax = 3*nside-1
     ells = np.arange(lmax+1)
     nells = len(ells)
-    sens=1
-    knee=1
-    ylf=1
-    fsky=0.1
     dl2cl = np.ones(len(ells))
     dl2cl[1:] = 2*np.pi/(ells[1:]*(ells[1:]+1.))
     cl2dl = (ells*(ells+1.))/(2*np.pi)
@@ -644,31 +708,30 @@ def create_noise_splits(nside, add_mask=False):
 
     npol = 2
     nmaps = nfreq*npol
-    N_ells_sky = np.zeros([nfreq, npol, nfreq, npol, nells])
+    N_ells = np.zeros([nfreq, npol, nfreq, npol, nells])
     for i,n in enumerate(nu):
         for j in [0,1]:
-            N_ells_sky[i, j, i, j, :] = nell[i]
+            N_ells[i, j, i, j, :] = nell[i]
         
     # Noise maps
-    nsplits = 4
     npix = hp.nside2npix(nside)
     maps_noise = np.zeros([nsplits, nfreq, npol, npix])
     for s in range(nsplits):
         for i in range(nfreq):
-            nell_ee = N_ells_sky[i, 0, i, 0, :]*dl2cl * nsplits
-            nell_bb = N_ells_sky[i, 1, i, 1, :]*dl2cl * nsplits
+            nell_ee = N_ells[i, 0, i, 0, :]*dl2cl * nsplits
+            nell_bb = N_ells[i, 1, i, 1, :]*dl2cl * nsplits
             nell_00 = nell_ee * 0 * nsplits
-            maps_noise[s, i, :, :] = hp.synfast([nell_00, nell_ee, nell_bb, nell_00, nell_00, nell_00], nside, pol=False, new=True)[1:]            
-            
+            maps_noise[s, i, :, :] = hp.synfast([nell_00, nell_ee, nell_bb,
+                                                 nell_00, nell_00, nell_00],
+                                                nside, pol=False, new=True,
+                                                verbose=False)[1:]
+
     if add_mask:
         nhits=hp.ud_grade(hp.read_map("norm_nHits_SA_35FOV.fits",  verbose=False),nside_out=nside)
         nhits/=np.amax(nhits) 
         fsky_msk=np.mean(nhits) 
         nhits_binary=np.zeros_like(nhits) 
         nhits_binary[nhits>1E-3]=1
-    
-    dict_out = {'maps_noise': maps_noise}
-    return (dict_out)
 
-
-
+    dict_out = {'maps_noise': maps_noise, 'cls_noise': N_ells}
+    return dict_out
