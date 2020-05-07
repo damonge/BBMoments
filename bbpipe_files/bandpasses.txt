@@ -1,6 +1,6 @@
-/users/damonge/SO/BBMoments/sims_gauss_fullsky_nosiv_ns256_csd/s1000/bpss_0.txt
-/users/damonge/SO/BBMoments/sims_gauss_fullsky_nosiv_ns256_csd/s1000/bpss_1.txt
-/users/damonge/SO/BBMoments/sims_gauss_fullsky_nosiv_ns256_csd/s1000/bpss_2.txt
-/users/damonge/SO/BBMoments/sims_gauss_fullsky_nosiv_ns256_csd/s1000/bpss_3.txt
-/users/damonge/SO/BBMoments/sims_gauss_fullsky_nosiv_ns256_csd/s1000/bpss_4.txt
-/users/damonge/SO/BBMoments/sims_gauss_fullsky_nosiv_ns256_csd/s1000/bpss_5.txt
+bbpipe_files/bpss_0.txt
+bbpipe_files/bpss_1.txt
+bbpipe_files/bpss_2.txt
+bbpipe_files/bpss_3.txt
+bbpipe_files/bpss_4.txt
+bbpipe_files/bpss_5.txt

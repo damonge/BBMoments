@@ -726,19 +726,19 @@ def create_noise_splits(nside, add_mask=False, sens=1, knee=1, ylf=1,
                                                 nside, pol=False, new=True,
                                                 verbose=False)[1:]
 
-    if add_mask:
-        nhits=hp.ud_grade(hp.read_map("./data/norm_nHits_SA_35FOV.fits", verbose=False), nside_out=nside)
-        nhits/=np.amax(nhits) 
-        fsky_msk=np.mean(nhits) 
-        nhits_binary=np.zeros_like(nhits)
-        inv_sqrtnhits=np.zeros_like(nhits)
-        inv_sqrtnhits[nhits>1E-3]=1./np.sqrt(nhits[nhits>1E-3])
-        nhits_binary[nhits>1E-3]=1
+    nhits=hp.ud_grade(hp.read_map("./data/norm_nHits_SA_35FOV.fits", verbose=False), nside_out=nside)
+    nhits/=np.amax(nhits) 
+    fsky_msk=np.mean(nhits) 
+    nhits_binary=np.zeros_like(nhits)
+    inv_sqrtnhits=np.zeros_like(nhits)
+    inv_sqrtnhits[nhits>1E-3]=1./np.sqrt(nhits[nhits>1E-3])
+    nhits_binary[nhits>1E-3]=1
 
-        maps_noise *= inv_sqrtnhits
+    if add_mask:
+            maps_noise *= inv_sqrtnhits
 
     dict_out = {'maps_noise': maps_noise,
                 'cls_noise': N_ells,
-                'mask' : n_hits_binary}
+                'mask' : nhits_binary}
 
     return dict_out

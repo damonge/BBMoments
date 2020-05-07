@@ -1,7 +1,17 @@
-modules: bbpower
-
+config: bbpipe_files/config.yaml
+inputs:
+  bandpasses_list: bbpipe_files/bandpasses.txt
+  beams_list: bbpipe_files/beams.txt
+  cells_fiducial: bbpipe_files/cells_model.sacc
+  masks_apodized: bbpipe_files/mask.fits
+  sims_list: bbpipe_files/sims_list.txt
+  splits_list: bbpipe_files/splits_list.txt
 launcher: local
-
+log_dir: bbpipe_files
+modules: bbpower
+output_dir: bbpipe_files
+pipeline_log: bbpipe_files/log.txt
+resume: false
 stages:
 - name: BBPowerSpecter
   nprocess: 1
@@ -11,18 +21,3 @@ stages:
   nprocess: 1
 - name: BBPlotter
   nprocess: 1
-
-inputs:
-  bandpasses_list: data/bandpasses.txt
-  beams_list: data/beams.txt
-  cells_fiducial: data/cells_model.sacc
-  masks_apodized: data/mask.fits
-  sims_list: data/sims_list.txt
-  splits_list: data/splits_list.txt
-
-config: outputs/config.yaml
-
-log_dir: outputs
-output_dir: outputs
-pipeline_log: outputs/log.txt
-resume: false

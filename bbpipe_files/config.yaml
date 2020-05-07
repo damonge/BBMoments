@@ -1,70 +1,152 @@
-global:
-  compute_dell: true
-  nside: 256
-
-BBPowerSpecter:
-  bpw_edges: data/bpw_edges.txt
-  n_iter: 3
-  purify_B: false
-
-BBPowerSummarizer:
-  data_covar_diag_order: 3
-  data_covar_type: block_diagonal
-  nulls_covar_diag_order: 0
-  nulls_covar_type: diagonal
-
 BBCompSep:
-  sampler: 'emcee'
-  nwalkers: 128
-  n_iters: 1000
-  likelihood_type: 'chi2'
-  pol_channels: ['B']
-  l_min: 30
-  l_max: 300
   cmb_model:
     cmb_templates:
     - ./examples/data/camb_lens_nobb.dat
     - ./examples/data/camb_lens_r1.dat
     params:
-      A_lens: ["A_lens", "tophat", [0.0, 1.0, 2.0]]
-      r_tensor: ["r_tensor", "tophat", [-1, 0.0, 1]]
+      A_lens:
+      - A_lens
+      - tophat
+      - - 0.0
+        - 1.0
+        - 2.0
+      r_tensor:
+      - r_tensor
+      - tophat
+      - - -1
+        - 0.0
+        - 1
   fg_model:
     component_1:
+      cl:
+        BB: ClPowerLaw
+        EE: ClPowerLaw
+      cl_parameters:
+        BB:
+          alpha_d_bb:
+          - alpha
+          - tophat
+          - - -1.0
+            - -0.42
+            - 0.0
+          amp_d_bb:
+          - amp
+          - tophat
+          - - 0.0
+            - 5.0
+            - inf
+          l0_d_bb:
+          - ell0
+          - fixed
+          - - 80.0
+        EE:
+          alpha_d_ee:
+          - alpha
+          - tophat
+          - - -1.0
+            - -0.42
+            - 0.0
+          amp_d_ee:
+          - amp
+          - tophat
+          - - 0.0
+            - 10.0
+            - inf
+          l0_d_ee:
+          - ell0
+          - fixed
+          - - 80.0
+      cross:
+        epsilon_ds:
+        - component_2
+        - tophat
+        - - -1.0
+          - 0.0
+          - 1.0
       name: Dust
       sed: Dust
+      sed_parameters:
+        beta_d:
+        - beta_d
+        - Gaussian
+        - - 1.6
+          - 0.11
+        nu0_d:
+        - nu0
+        - fixed
+        - - 353.0
+        temp_d:
+        - temp
+        - fixed
+        - - 19.6
+    component_2:
       cl:
         BB: ClPowerLaw
         EE: ClPowerLaw
-      sed_parameters:
-        beta_d: ["beta_d", "Gaussian", [1.6, 0.11]]
-        nu0_d: ["nu0", "fixed", [353.0]]
-        temp_d: ["temp", "fixed", [19.6]]
       cl_parameters:
         BB:
-          alpha_d_bb: ["alpha", "tophat", [-1.0, -0.42, 0.0]]
-          amp_d_bb: ["amp", "tophat", [0.0, 5.0, "inf"]]
-          l0_d_bb: ["ell0", "fixed", [80.0]]
+          alpha_s_bb:
+          - alpha
+          - tophat
+          - - -1.0
+            - -0.6
+            - 0.0
+          amp_s_bb:
+          - amp
+          - tophat
+          - - 0.0
+            - 2.0
+            - inf
+          l0_s_bb:
+          - ell0
+          - fixed
+          - - 80.0
         EE:
-          alpha_d_ee: ["alpha", "tophat", [-1.0, -0.42, 0.0]]
-          amp_d_ee: ["amp", "tophat", [0.0, 10.0, "inf"]]
-          l0_d_ee: ["ell0", "fixed", [80.0]]
-      cross:
-        epsilon_ds: ["component_2", "tophat", [-1.0, 0.0, 1.0]]
-    component_2:
+          alpha_s_ee:
+          - alpha
+          - tophat
+          - - -1.0
+            - -0.6
+            - 0.0
+          amp_s_ee:
+          - amp
+          - tophat
+          - - 0.0
+            - 4.0
+            - inf
+          l0_s_ee:
+          - ell0
+          - fixed
+          - - 80.0
       name: Synchrotron
       sed: Synchrotron
-      cl:
-        BB: ClPowerLaw
-        EE: ClPowerLaw
-      cl_parameters:
-        BB:
-          alpha_s_bb: ["alpha", "tophat", [-1.0, -0.6, 0.0]]
-          amp_s_bb: ["amp", "tophat", [0.0, 2.0, "inf"]]
-          l0_s_bb: ["ell0", "fixed", [80.0]]
-        EE:
-          alpha_s_ee: ["alpha", "tophat", [-1.0, -0.6, 0.0]]
-          amp_s_ee: ["amp", "tophat", [0.0, 4.0, "inf"]]
-          l0_s_ee: ["ell0", "fixed", [80.0]]
       sed_parameters:
-        beta_s: ["beta_pl", "Gaussian", [-3.0, 0.3]]
-        nu0_s: ["nu0", "fixed", [23.0]]
+        beta_s:
+        - beta_pl
+        - Gaussian
+        - - -3.0
+          - 0.3
+        nu0_s:
+        - nu0
+        - fixed
+        - - 23.0
+  l_max: 300
+  l_min: 30
+  likelihood_type: chi2
+  n_iters: 1000
+  nwalkers: 128
+  pol_channels:
+  - B
+  sampler: emcee
+BBPowerSpecter:
+  bpw_edges: bbpipe_files/bpw_edges.txt
+  n_iter: 3
+  purify_B: false
+BBPowerSummarizer:
+  data_covar_diag_order: 3
+  data_covar_type: block_diagonal
+  nulls_covar_diag_order: 0
+  nulls_covar_type: diagonal
+global:
+  compute_dell: true
+  nside: 256

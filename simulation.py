@@ -30,20 +30,24 @@ parser.add_option('--remove-E', dest='include_E', default=True, action='store_fa
                   help='Set to remove E-modes from simulation, default=True.')
 parser.add_option('--remove-B', dest='include_B', default=True, action='store_false',
                   help='Set to remove B-modes from simulation, default=True.')
-parser.add_option('--mask', dest='add_mask', default=False, action='store_true',
-                  help='Set to add mask to observational splits.')
+parser.add_option('--mask', dest='add_mask', default=True, action='store_false',
+                  help='Set to remove mask to observational splits.')
 (o, args) = parser.parse_args()
 
 nside = o.nside
 seed = o.seed
 
 if o.dirname == 'none':
-    o.dirname = "/mnt/extraspace/damonge/Simulations_Moments/sim_ns%d" % o.nside
+    o.dirname = "/mnt/extraspace/susanna/BBMoments/Simulations_Moments/sim_ns%d" % o.nside
     o.dirname+= "_seed%d" % o.seed
     o.dirname+= "_stdd%d_stds%d"%(o.std_dust*100, o.std_sync*100)
-    o.dirname+= "_gdm%.1lf_gsm%.1lf"%(-o.gamma_dust, -o.gamma_sync)
+    o.dirname+= "_gdm%.1lf_gsm%.1lf"%(-int(o.gamma_dust), -int(o.gamma_sync))
+    if o.add_mask:
+        o.dirname+= "_msk"
+    else:
+        o.dirname+= "_fullsky"
 os.system('mkdir -p ' + o.dirname)
-print(dirname)
+print(o.dirname)
 
 # Decide whether spectral index is constant or varying
 mean_p, moment_p = ut.get_default_params()
