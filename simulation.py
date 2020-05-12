@@ -13,32 +13,32 @@ parser.add_option('--seed', dest='seed',  default=1000, type=int,
 parser.add_option('--nside', dest='nside', default=256, type=int,
                   help='Set to define Nside parameter, default=256')
 parser.add_option('--std-dust', dest='std_dust', default=0., type=float,
-                  help='')
+                  help='Deviation from the mean value of beta dust, default = 0.')
 parser.add_option('--std-sync', dest='std_sync', default=0., type=float,
-                  help='')
+                  help='Deviation from the mean value of beta synchrotron, default = 0.')
 parser.add_option('--gamma-dust', dest='gamma_dust', default=-3., type=float,
-                  help='')
+                  help='Exponent of the beta dust power law, default=-3.')
 parser.add_option('--gamma-sync', dest='gamma_sync', default=-3., type=float,
-                  help='')
+                  help='Exponent of the beta sync power law, default=-3.')
 parser.add_option('--remove-cmb', dest='include_cmb', default=True, action='store_false',
                   help='Set to remove CMB from simulation, default=True.')
 parser.add_option('--remove-sync', dest='include_sync', default=True, action='store_false',
                   help='Set to remove synchrotron from simulation, default=True.')
 parser.add_option('--remove-dust', dest='include_dust', default=True, action='store_false',
                   help='Set to remove dust from simulation, default=True.')
-parser.add_option('--remove-E', dest='include_E', default=True, action='store_false',
+parser.add_option('--include-E', dest='include_E', default=True, action='store_false',
                   help='Set to remove E-modes from simulation, default=True.')
-parser.add_option('--remove-B', dest='include_B', default=True, action='store_false',
+parser.add_option('--include-B', dest='include_B', default=True, action='store_false',
                   help='Set to remove B-modes from simulation, default=True.')
-parser.add_option('--mask', dest='add_mask', default=True, action='store_false',
-                  help='Set to remove mask to observational splits.')
+parser.add_option('--mask', dest='add_mask', default=False, action='store_true',
+                  help='Set to add mask to observational splits, default=False.')
 (o, args) = parser.parse_args()
 
 nside = o.nside
 seed = o.seed
 
 if o.dirname == 'none':
-    o.dirname = "/mnt/extraspace/susanna/BBMoments/Simulations_Moments/sim_ns%d" % o.nside
+    o.dirname = "/mnt/extraspace/susanna/BBMoments/Simulations_Moments_varStd/sim_ns%d" % o.nside
     o.dirname+= "_seed%d" % o.seed
     o.dirname+= "_stdd%d_stds%d"%(o.std_dust*100, o.std_sync*100)
     o.dirname+= "_gdm%.1lf_gsm%.1lf"%(-int(o.gamma_dust), -int(o.gamma_sync))
@@ -46,6 +46,10 @@ if o.dirname == 'none':
         o.dirname+= "_msk"
     else:
         o.dirname+= "_fullsky"
+    if o.include_E:
+        o.dirname+= "_E"
+    if o.include_B:
+        o.dirname+= "_B"
 os.system('mkdir -p ' + o.dirname)
 print(o.dirname)
 
