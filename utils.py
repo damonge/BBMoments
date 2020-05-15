@@ -208,7 +208,7 @@ def get_delta_beta_amp(sigma, gamma):
     return 4*np.pi*sigma**2*80**gamma/(-3+2*zeta(-1-gamma)+zeta(-gamma))
 
 
-def get_beta_map(nside, beta0, amp, gamma, l0=80, l_cutoff=2, seed=None):
+def get_beta_map(nside, beta0, amp, gamma, l0=80, l_cutoff=2, seed=None, gaussian=True):
     """
     Returns realization of the spectral index map.
 
@@ -221,19 +221,29 @@ def get_beta_map(nside, beta0, amp, gamma, l0=80, l_cutoff=2, seed=None):
         l_cutoff: ell below which the power spectrum will be zero.
             (default: 2).
         seed: seed (if None, a random seed will be used).
+        gaussian: beta map from power law spectrum (if False, a spectral 
+            index map obtained from the Planck data using the Commander code 
+            is used for dust, and ... for sync)  
 
     Returns:
         Spectral index map
     """
-    if seed is not None:
-        np.random.seed(seed)
-    ls = np.arange(3*nside)
-    cls = get_delta_beta_cl(amp, gamma, ls, l0, l_cutoff)
-    mp = hp.synfast(cls, nside, verbose=False)
-    mp += beta0
-    return mp
-
-
+    if gaussian:
+        if seed is not None:
+            np.random.seed(seed)
+        ls = np.arange(3*nside)
+        cls = get_delta_beta_cl(amp, gamma, ls, l0, l_cutoff)
+        mp = hp.synfast(cls, nside, verbose=False)
+        mp += beta0
+        return mp
+    else:
+        beta_sync_in =  hp.ud_grade(hp.read_map('./data/beta_synch_NKsims_512_1.fits', verbose=False), nside_out=nside)
+        #hp.write_map("beta_sync_ns_256_shifted.fits", beta_sync-3.1, overwrite=True)
+        beta_sync  = beta_sync_in-3.1
+        beta_dust = hp.ud_grade(hp.read_map('./data/dust_beta.fits', verbose=False), nside_out=nside)
+        return beta_sync, beta_dust
+    return None
+        
 def get_default_params():
     """ Returns default set of parameters describing a
     given sky realization. The parameters are distributed
@@ -262,7 +272,7 @@ def get_default_params():
     The moment parameters are:
       - 'amp_beta_dust': delta_beta power spectrum amplitude
           for dust.
-      - 'gamma_beta_dust': delta_beta power spectrum tilt.
+      - 'gamma_beta_dust': delta_beta power spectrum tilt
           for dust.
       - 'l0_beta_dust': pivot scale for delta_beta (80).
       - 'l_cutoff_beta_dust': minimum ell for which the delta
@@ -543,8 +553,8 @@ def get_theory_spectra(nside, mean_pars=None, moment_pars=None, delta_ell=10, ad
                 'windows': windows}
     return dict_out
 
-def get_sky_realization(nside, seed=None, mean_pars=None, moment_pars=None,
-                        compute_cls=False, delta_ell=10):
+def get_sky_realization(nside, gaussian_betas=True, seed=None, mean_pars=None,
+                        moment_pars=None,compute_cls=False, delta_ell=10):
     """ Generate a sky realization for a set of input sky parameters.
 
     Args:
@@ -557,6 +567,8 @@ def get_sky_realization(nside, seed=None, mean_pars=None, moment_pars=None,
             If `None`, then a default set will be used.
         compute_cls: return also the power spectra? Default: False.
         delta_ell: bandpower size to use if compute_cls is True.
+        gaussian_betas: gaussian spectral index maps, see 'get_beta_map'.
+            Default: True.
 
     Returns:
         A dictionary containing the different component maps,
@@ -587,22 +599,28 @@ def get_sky_realization(nside, seed=None, mean_pars=None, moment_pars=None,
     Q_cmb, U_cmb = hp.synfast([cl0, cl_cmb_ee, cl_cmb_bb, cl0, cl0, cl0],
                               nside, new=True, verbose=False)[1:]
 
-    # Dust spectral index
-    beta_dust = get_beta_map(nside,
-                             mean_pars['beta_dust'],
-                             moment_pars['amp_beta_dust'],
-                             moment_pars['gamma_beta_dust'],
-                             moment_pars['l0_beta_dust'],
-                             moment_pars['l_cutoff_beta_dust'])
+    # Dust and Synchrotron spectral indices
+    if gaussian_betas :
+        beta_dust = get_beta_map(nside,
+                                 mean_pars['beta_dust'],
+                                 moment_pars['amp_beta_dust'],
+                                 moment_pars['gamma_beta_dust'],
+                                 moment_pars['l0_beta_dust'],
+                                 moment_pars['l_cutoff_beta_dust'],
+                                 gaussian=True)
+        beta_sync = get_beta_map(nside, 
+                                 mean_pars['beta_sync'],
+                                 moment_pars['amp_beta_sync'],
+                                 moment_pars['gamma_beta_sync'],
+                                 moment_pars['l0_beta_sync'],
+                                 moment_pars['l_cutoff_beta_sync'],
+                                 gaussian=True)
+    else:
+        beta_sync, beta_dust = get_beta_map(nside, None, None, None, None, None,
+                                            gaussian=False)
+
     # Dust temperature
     temp_dust = np.ones(npix) * mean_pars['temp_dust']
-    # Synchrotron spectral index
-    beta_sync = get_beta_map(nside, 
-                             mean_pars['beta_sync'],
-                             moment_pars['amp_beta_sync'],
-                             moment_pars['gamma_beta_sync'],
-                             moment_pars['l0_beta_sync'],
-                             moment_pars['l_cutoff_beta_sync'])
 
     # Create PySM simulation
     zeromap = np.zeros(npix)

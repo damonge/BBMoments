@@ -32,13 +32,21 @@ parser.add_option('--include-B', dest='include_B', default=True, action='store_f
                   help='Set to remove B-modes from simulation, default=True.')
 parser.add_option('--mask', dest='add_mask', default=False, action='store_true',
                   help='Set to add mask to observational splits, default=False.')
+parser.add_option('--beta', dest='gaussian_beta', default=True, action='store_false',
+                  help='Set for non-gaussian beta variation.')
 (o, args) = parser.parse_args()
 
 nside = o.nside
 seed = o.seed
 
+if not o.gaussian_beta:
+    print('yahoo')
+
 if o.dirname == 'none':
-    o.dirname = "/mnt/extraspace/susanna/BBMoments/Simulations_Moments_varStd/sim_ns%d" % o.nside
+    #o.dirname = "/mnt/extraspace/susanna/BBMoments/Simulations_Moments/sim_ns%d" % o.nside
+    #o.dirname = "/mnt/extraspace/susanna/BBMoments/Simulations_Moments_varStd/sim_ns%d" % o.nside
+    o.dirname = "./pysm_beta_sim/sim_ns%d" % o.nside
+    #o.dirname = "/mnt/extraspace/susanna/BBMoments/Simulations_Moments_msk_onlyB/sim_ns%d" % o.nside
     o.dirname+= "_seed%d" % o.seed
     o.dirname+= "_stdd%d_stds%d"%(o.std_dust*100, o.std_sync*100)
     o.dirname+= "_gdm%.1lf_gsm%.1lf"%(-int(o.gamma_dust), -int(o.gamma_sync))
@@ -82,7 +90,8 @@ scc = ut.get_theory_sacc(o.nside, mean_pars=mean_p,
                          moment_pars=moment_p, add_11=True, add_02=True)
 scc.saveToHDF(o.dirname+"/cells_model.sacc")
 sim = ut.get_sky_realization(o.nside, seed=o.seed, mean_pars=mean_p,
-                                   moment_pars=moment_p, compute_cls=True)
+                             moment_pars=moment_p, gaussian_betas=o.gaussian_beta,
+                             compute_cls=True)
 noi = ut.create_noise_splits(o.nside)
 
 # Define maps signal and noise
