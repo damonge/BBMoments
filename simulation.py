@@ -39,14 +39,11 @@ parser.add_option('--beta', dest='gaussian_beta', default=True, action='store_fa
 nside = o.nside
 seed = o.seed
 
-if not o.gaussian_beta:
-    print('yahoo')
-
 if o.dirname == 'none':
-    #o.dirname = "/mnt/extraspace/susanna/BBMoments/Simulations_Moments/sim_ns%d" % o.nside
-    #o.dirname = "/mnt/extraspace/susanna/BBMoments/Simulations_Moments_varStd/sim_ns%d" % o.nside
-    o.dirname = "./pysm_beta_sim/sim_ns%d" % o.nside
-    #o.dirname = "/mnt/extraspace/susanna/BBMoments/Simulations_Moments_msk_onlyB/sim_ns%d" % o.nside
+    if not o.gaussian_beta:
+        o.dirname = "/mnt/extraspace/susanna/BBMoments/Simulations_Moments_nongaussian/sim_ns%d" % o.nside
+    else:
+    o.dirname = "/mnt/extraspace/susanna/BBMoments/Simulations_Moments/sim_ns%d" % o.nside
     o.dirname+= "_seed%d" % o.seed
     o.dirname+= "_stdd%d_stds%d"%(o.std_dust*100, o.std_sync*100)
     o.dirname+= "_gdm%.1lf_gsm%.1lf"%(-int(o.gamma_dust), -int(o.gamma_sync))
