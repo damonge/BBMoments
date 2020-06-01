@@ -34,15 +34,16 @@ parser.add_option('--mask', dest='add_mask', default=False, action='store_true',
                   help='Set to add mask to observational splits, default=False.')
 parser.add_option('--beta', dest='gaussian_beta', default=True, action='store_false',
                   help='Set for non-gaussian beta variation.')
+parser.add_option('--nu0-dust', dest='nu0_dust', default=353., type=int,
+                  help='')
+parser.add_option('--nu0-sync', dest='nu0_sync', default=23., type=int,
+                  help='')
 (o, args) = parser.parse_args()
 
 nside = o.nside
 seed = o.seed
 
 if o.dirname == 'none':
-    if not o.gaussian_beta:
-        o.dirname = "/mnt/extraspace/susanna/BBMoments/Simulations_Moments_nongaussian/sim_ns%d" % o.nside
-    else:
     o.dirname = "/mnt/extraspace/susanna/BBMoments/Simulations_Moments/sim_ns%d" % o.nside
     o.dirname+= "_seed%d" % o.seed
     o.dirname+= "_stdd%d_stds%d"%(o.std_dust*100, o.std_sync*100)
@@ -55,6 +56,9 @@ if o.dirname == 'none':
         o.dirname+= "_E"
     if o.include_B:
         o.dirname+= "_B"
+    if not o.gaussian_beta:
+        o.dirname+= "_pysmBetas"
+    o.dirname+= "_nu0d%d_nu0s%d" %(o.nu0_dust, o.nu0_sync)
 os.system('mkdir -p ' + o.dirname)
 print(o.dirname)
 
@@ -79,6 +83,10 @@ mean_p['include_dust'] = o.include_dust
 # Which polarizations do we want to include?
 mean_p['include_E'] = o.include_E
 mean_p['include_B'] = o.include_B
+
+# Define pivot freqs
+mean_p['nu0_dust'] = o.nu0_dust
+mean_p['nu0_sync'] = o.nu0_sync
 
 # Theory prediction, simulation and noise
 thr = ut.get_theory_spectra(o.nside, mean_pars=mean_p,

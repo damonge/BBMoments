@@ -237,10 +237,8 @@ def get_beta_map(nside, beta0, amp, gamma, l0=80, l_cutoff=2, seed=None, gaussia
         mp += beta0
         return mp
     else:
-        beta_sync_in =  hp.ud_grade(hp.read_map('./data/beta_synch_NKsims_512_1.fits', verbose=False), nside_out=nside)
-        #hp.write_map("beta_sync_ns_256_shifted.fits", beta_sync-3.1, overwrite=True)
-        beta_sync  = beta_sync_in-3.1
-        beta_dust = hp.ud_grade(hp.read_map('./data/dust_beta.fits', verbose=False), nside_out=nside)
+        beta_sync = hp.ud_grade(hp.read_map('./data/beta_sync_NK_equatorial.fits', verbose=False), nside_out=nside)
+        beta_dust = hp.ud_grade(hp.read_map('./data/beta_dust_pysm_equatorial.fits', verbose=False), nside_out=nside)
         return beta_sync, beta_dust
     return None
         
@@ -331,7 +329,7 @@ def get_mean_spectra(lmax, mean_pars):
                                                    mean_pars['beta_sync'],
                                                    None, 'sync'))**2
     # Dust amplitudes
-    A_dust_BB = A_dust_BB * fcmb(mean_pars['nu0_dust'])**2
+    A_dust_BB = A_dust_BB * fcmb(mean_pars['nu0_dust_def'])**2
     dl_dust_bb = A_dust_BB * ((ells+1E-5) / 80.)**mean_pars['alpha_dust_BB']
     dl_dust_ee = mean_pars['EB_dust'] * A_dust_BB * \
                  ((ells+1E-5) / 80.)**mean_pars['alpha_dust_EE']
@@ -346,7 +344,7 @@ def get_mean_spectra(lmax, mean_pars):
         cl_dust_ee *= 0
 
     # Sync amplitudes
-    A_sync_BB = A_sync_BB * fcmb(mean_pars['nu0_sync'])**2
+    A_sync_BB = A_sync_BB * fcmb(mean_pars['nu0_sync_def'])**2
     dl_sync_bb = A_sync_BB * ((ells+1E-5) / 80.)**mean_pars['alpha_sync_BB']
     dl_sync_ee = mean_pars['EB_sync'] * A_sync_BB * \
                  ((ells+1E-5) / 80.)**mean_pars['alpha_sync_EE']
