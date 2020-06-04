@@ -328,6 +328,8 @@ def get_mean_spectra(lmax, mean_pars):
                                                    mean_pars['nu0_sync_def'],
                                                    mean_pars['beta_sync'],
                                                    None, 'sync'))**2
+    #print(A_dust_BB, A_sync_BB)
+          
     # Dust amplitudes
     A_dust_BB = A_dust_BB * fcmb(mean_pars['nu0_dust_def'])**2
     dl_dust_bb = A_dust_BB * ((ells+1E-5) / 80.)**mean_pars['alpha_dust_BB']
@@ -377,11 +379,10 @@ def get_mean_spectra(lmax, mean_pars):
         cl_cmb_bb *= 0
         cl_cmb_ee *= 0
 
-    return (ells, dl2cl, cl2dl,
-            cl_dust_bb, cl_dust_ee,
-            cl_sync_bb, cl_sync_ee,
-            cl_cmb_bb, cl_cmb_ee)
-
+    return(ells, dl2cl, cl2dl,
+           cl_dust_bb, cl_dust_ee,
+           cl_sync_bb, cl_sync_ee,
+           cl_cmb_bb, cl_cmb_ee)
 
 def get_theory_sacc(nside, mean_pars=None, moment_pars=None, delta_ell=10, add_11=False, add_02=False):
     """ Generate a SACC object containing a set of theory power spectra.
@@ -551,8 +552,9 @@ def get_theory_spectra(nside, mean_pars=None, moment_pars=None, delta_ell=10, ad
                 'windows': windows}
     return dict_out
 
-def get_sky_realization(nside, gaussian_betas=True, seed=None, mean_pars=None,
-                        moment_pars=None,compute_cls=False, delta_ell=10):
+def get_sky_realization(nside, plaw_amps=True, gaussian_betas=True, seed=None,
+                        mean_pars=None, moment_pars=None,compute_cls=False,
+                        delta_ell=10):
     """ Generate a sky realization for a set of input sky parameters.
 
     Args:
@@ -567,6 +569,9 @@ def get_sky_realization(nside, gaussian_betas=True, seed=None, mean_pars=None,
         delta_ell: bandpower size to use if compute_cls is True.
         gaussian_betas: gaussian spectral index maps, see 'get_beta_map'.
             Default: True.
+        plaw_amps: dust and synchrotron amplitude maps modelled as power
+            laws. If false, returns realistic amplitude maps in equatorial
+            coordinates. Default: True. 
 
     Returns:
         A dictionary containing the different component maps,
@@ -586,19 +591,28 @@ def get_sky_realization(nside, gaussian_betas=True, seed=None, mean_pars=None,
     lmax = 3*nside-1
     ells, dl2cl, cl2dl, cl_dust_bb, cl_dust_ee, cl_sync_bb, cl_sync_ee, cl_cmb_bb, cl_cmb_ee = get_mean_spectra(lmax, mean_pars)
     cl0 = 0 * cl_dust_bb
-    # Dust amplitudes
-    Q_dust, U_dust = hp.synfast([cl0, cl_dust_ee, cl_dust_bb, cl0, cl0, cl0],
-                                nside, new=True, verbose=False)[1:]
-    # Sync amplitudes
-    Q_sync, U_sync = hp.synfast([cl0, cl_sync_ee, cl_sync_bb, cl0, cl0, cl0],
-                                nside, new=True, verbose=False)[1:]
 
+    if plaw_amps:
+        # Dust amplitudes
+        Q_dust, U_dust = hp.synfast([cl0, cl_dust_ee, cl_dust_bb, cl0, cl0, cl0],
+                                    nside, new=True, verbose=False)[1:]
+        # Sync amplitudes
+        Q_sync, U_sync = hp.synfast([cl0, cl_sync_ee, cl_sync_bb, cl0, cl0, cl0],
+                                    nside, new=True, verbose=False)[1:]
+    else:
+        # Dust amplitudes:
+        Q_dust = hp.ud_grade(hp.read_map("./data/dust_QU_equatorial.fits", verbose=False, field=0), nside_out=nside)
+        U_dust = hp.ud_grade(hp.read_map("./data/dust_QU_equatorial.fits", verbose=False, field=1), nside_out=nside)
+        # Sync amplitudes
+        Q_sync = hp.ud_grade(hp.read_map("./data/synch_QU_equatorial.fits", verbose=False, field=0), nside_out=nside)
+        U_sync = hp.ud_grade(hp.read_map("./data/synch_QU_equatorial.fits", verbose=False, field=1), nside_out=nside)
+        
     # CMB amplitude
     Q_cmb, U_cmb = hp.synfast([cl0, cl_cmb_ee, cl_cmb_bb, cl0, cl0, cl0],
                               nside, new=True, verbose=False)[1:]
 
     # Dust and Synchrotron spectral indices
-    if gaussian_betas :
+    if gaussian_betas:
         beta_dust = get_beta_map(nside,
                                  mean_pars['beta_dust'],
                                  moment_pars['amp_beta_dust'],

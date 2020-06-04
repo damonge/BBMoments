@@ -35,16 +35,20 @@ parser.add_option('--mask', dest='add_mask', default=False, action='store_true',
 parser.add_option('--beta', dest='gaussian_beta', default=True, action='store_false',
                   help='Set for non-gaussian beta variation.')
 parser.add_option('--nu0-dust', dest='nu0_dust', default=353., type=int,
-                  help='')
+                  help='Set to change dust pivot frequency, default=353 GHz.')
 parser.add_option('--nu0-sync', dest='nu0_sync', default=23., type=int,
-                  help='')
+                  help='Set to change synchrotron pivot frequency, default=23 GHz.')
+parser.add_option('--plaw-amp', dest='plaw_amps', default=True, action='store_false',
+                  help='Set to use realistic amplitude maps for dust and synchrotron.')
 (o, args) = parser.parse_args()
 
 nside = o.nside
 seed = o.seed
 
 if o.dirname == 'none':
-    o.dirname = "/mnt/extraspace/susanna/BBMoments/Simulations_Moments/sim_ns%d" % o.nside
+    #o.dirname = "/mnt/extraspace/susanna/BBMoments/Simulations_Moments/sim_ns%d" % o.nside
+    #o.dirname = "/mnt/extraspace/susanna/BBMoments/Simulations_Moments_shiftednu0s_try2/sim_ns%d" % o.nside
+    o.dirname = "/mnt/extraspace/susanna/BBMoments/Simulations_Moments_realAmps/sim_ns%d" % o.nside
     o.dirname+= "_seed%d" % o.seed
     o.dirname+= "_stdd%d_stds%d"%(o.std_dust*100, o.std_sync*100)
     o.dirname+= "_gdm%.1lf_gsm%.1lf"%(-int(o.gamma_dust), -int(o.gamma_sync))
@@ -58,6 +62,8 @@ if o.dirname == 'none':
         o.dirname+= "_B"
     if not o.gaussian_beta:
         o.dirname+= "_pysmBetas"
+    if not o.plaw_amps:
+        o.dirname+= "_realAmps"
     o.dirname+= "_nu0d%d_nu0s%d" %(o.nu0_dust, o.nu0_sync)
 os.system('mkdir -p ' + o.dirname)
 print(o.dirname)
@@ -96,7 +102,7 @@ scc = ut.get_theory_sacc(o.nside, mean_pars=mean_p,
 scc.saveToHDF(o.dirname+"/cells_model.sacc")
 sim = ut.get_sky_realization(o.nside, seed=o.seed, mean_pars=mean_p,
                              moment_pars=moment_p, gaussian_betas=o.gaussian_beta,
-                             compute_cls=True)
+                             plaw_amps=o.plaw_amps, compute_cls=True)
 noi = ut.create_noise_splits(o.nside)
 
 # Define maps signal and noise
