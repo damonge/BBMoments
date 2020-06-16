@@ -38,8 +38,14 @@ parser.add_option('--nu0-dust', dest='nu0_dust', default=353., type=int,
                   help='Set to change dust pivot frequency, default=353 GHz.')
 parser.add_option('--nu0-sync', dest='nu0_sync', default=23., type=int,
                   help='Set to change synchrotron pivot frequency, default=23 GHz.')
-parser.add_option('--plaw-amp', dest='plaw_amps', default=True, action='store_false',
-                  help='Set to use realistic amplitude maps for dust and synchrotron.')
+parser.add_option('--A-dust-BB', dest='Ad', default=5, type=int,
+                  help='Set to modify the B-mode dust power spectrum amplitude, default=5')
+parser.add_option('--alpha-dust-BB', dest='alpha_d', default=-0.42, type=float,
+                  help='Set to mofify tilt in D_l^BB for dust, default=-0.42')
+parser.add_option('--A-sync-BB', dest='As', default=2, type=int,
+                  help='Set to modify the B-mode dust power spectrum amplitude, default=2')
+parser.add_option('--alpha-sync-BB', dest='alpha_s', default=-0.6, type=float,
+                  help='Set to mofify tilt in D_l^BB for synchrotron, default=-0.42')
 (o, args) = parser.parse_args()
 
 nside = o.nside
@@ -48,7 +54,7 @@ seed = o.seed
 if o.dirname == 'none':
     #o.dirname = "/mnt/extraspace/susanna/BBMoments/Simulations_Moments/sim_ns%d" % o.nside
     #o.dirname = "/mnt/extraspace/susanna/BBMoments/Simulations_Moments_shiftednu0s_try2/sim_ns%d" % o.nside
-    o.dirname = "/mnt/extraspace/susanna/BBMoments/Simulations_Moments_realAmps/sim_ns%d" % o.nside
+    o.dirname = "/mnt/extraspace/susanna/BBMoments/Simulations_Moments_realisticPySMsims_updated/sim_ns%d" % o.nside
     o.dirname+= "_seed%d" % o.seed
     o.dirname+= "_stdd%d_stds%d"%(o.std_dust*100, o.std_sync*100)
     o.dirname+= "_gdm%.1lf_gsm%.1lf"%(-int(o.gamma_dust), -int(o.gamma_sync))
@@ -86,9 +92,17 @@ if o.std_sync > 0. :
 mean_p['include_CMB'] = o.include_cmb
 mean_p['include_sync'] = o.include_sync
 mean_p['include_dust'] = o.include_dust
+
 # Which polarizations do we want to include?
 mean_p['include_E'] = o.include_E
 mean_p['include_B'] = o.include_B
+
+# Modify template plaws for dust and sync
+# i.e. define amp_d_bb, amp_s_bb, alpha_s, alpha_d
+mean_p['A_dust_BB'] = o.Ad
+mean_p['alpha_dust_BB'] = o.alpha_d
+mean_p['A_sync_BB'] = o.As
+mean_p['alpha_sync_BB'] = o.alpha_s
 
 # Define pivot freqs
 mean_p['nu0_dust'] = o.nu0_dust

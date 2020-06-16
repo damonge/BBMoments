@@ -7,7 +7,7 @@ import os
 from pyshtools.utils import Wigner3j
 from noise_calc import Simons_Observatory_V3_SA_noise,Simons_Observatory_V3_SA_beams
 
-def get_w3j(lmax=383):
+def get_w3j(lmax=384):
     """ Calculates Wigner 3J symbols (or reads them from file if they already exist).
     """
     if os.path.isfile('data/w3j_lmax%d.npz' % lmax):
@@ -379,7 +379,10 @@ def get_mean_spectra(lmax, mean_pars):
         cl_cmb_bb *= 0
         cl_cmb_ee *= 0
 
-    return(ells, dl2cl, cl2dl,
+    return(#A_dust_BB/fcmb(mean_pars['nu0_dust_def'])**2,
+           #A_sync_BB/fcmb(mean_pars['nu0_sync_def'])**2,
+           #fcmb(mean_pars['nu0_dust_def'])**2,
+           ells, dl2cl, cl2dl,
            cl_dust_bb, cl_dust_ee,
            cl_sync_bb, cl_sync_ee,
            cl_cmb_bb, cl_cmb_ee)
