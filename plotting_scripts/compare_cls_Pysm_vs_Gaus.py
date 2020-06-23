@@ -52,79 +52,78 @@ maps_gaus_ds='./FITS_sim_ns256_seed1000_stdd0_stds0_gdm3.0_gsm3.0_msk_E_B_nu0d35
 maps_pysm_ds='./FITS_sim_ns256_seed1000_stdd0_stds0_gdm3.0_gsm3.0_msk_E_B_pysmBetas_realAmps_nu0d353_nu0s23_dust_sync_Ad5/maps_sky_signal.fits'
 
 if not os.path.isfile("Outputs_compare_cls_Pysm_vs_Gaus/dls_gaus_s.txt") and os.path.isfile("Outputs_compare_cls_Pysm_vs_Gaus/dls_gaus_d.txt") and os.path.isfile("Outputs_compare_cls_Pysm_vs_Gaus/dls_gaus_ds.txt") and os.path.isfile("Outputs_compare_cls_Pysm_vs_Gaus/ls.txt"):
-    print('oops!')
-    ##open("Outputs_compare_cls_Pysm_vs_Gaus/ls.txt", 'w')
-    ##open('Outputs_compare_cls_Pysm_vs_Gaus/dls_gaus_s.txt', 'w')                                                                                             
-    ##open('Outputs_compare_cls_Pysm_vs_Gaus/dls_gaus_d.txt', 'w')                                                                                             
-    ##open('Outputs_compare_cls_Pysm_vs_Gaus/dls_gaus_ds.txt', 'w')                                                                                       
-    ##open('Outputs_compare_cls_Pysm_vs_Gaus/dls_pysm_s.txt', 'w')                                                                                             
-    ##open('Outputs_compare_cls_Pysm_vs_Gaus/dls_pysm_d.txt', 'w')                                                                                             
-    ##open('Outputs_compare_cls_Pysm_vs_Gaus/dls_pysm_ds.txt', 'w')
-    ##dls_gaus_s = []
-    ##dls_pysm_s = []
-    ##dls_gaus_d = []
-    ##dls_pysm_d = []
-    ##dls_gaus_ds = []
-    ##dls_pysm_ds = []
-    ##ls = []
-    ##for i in np.arange(0, 12, 2):
-    ##    j=i+1
-    ##    for k in np.arange(i, 12, 2):
-    ##        l=k+1
-    ##        ''' Write the dls arrrays to disk
-    ##        order: 1x1, 1x2, 1x3, 1x4, 1x5, 1x6,
-    ##                    2x2, 2x3, 2x4, 2x5, 2x6,
-    ##                         3x3, 3x4, 3x5, 3x6,
-    ##                              4x4, 4x5, 4x6,
-    ##                                   5x5, 5x6,
-    ##                                        6x6.'''        
-    ##        print('Selecting map fields')
-    ##        print('i j k l')
-    ##        print(i, j, k, l)
-    ##        print('Computing Dl at cross frequencies')        
-    ##        print('nu1 nu2')
-    ##        print((i+2)//2, (k+2)//2)
-    ##        print('-------------------')
-    ##    
-    ##        ell_eff, dl_ee_pysm_s, dl_bb_pysm_s = map2dl(mask, maps_pysm_s, i,j,k,l)
-    ##        _, dl_ee_gaus_s, dl_bb_gaus_s = map2dl(mask, maps_gaus_s, i,j,k,l)
-    ##    
-    ##        _, dl_ee_pysm_d, dl_bb_pysm_d = map2dl(mask, maps_pysm_d, i,j,k,l)
-    ##        _, dl_ee_gaus_d, dl_bb_gaus_d = map2dl(mask, maps_gaus_d, i,j,k,l)
-    ##    
-    ##        _, dl_ee_pysm_ds, dl_bb_pysm_ds = map2dl(mask, maps_pysm_ds,i,j,k,l)
-    ##        _, dl_ee_gaus_ds, dl_bb_gaus_ds = map2dl(mask, maps_gaus_ds, i,j,k,l)
-    ##
-    ##        ells=ell_eff
-    ##        dl2cl = np.ones(len(ells))
-    ##        dl2cl[1:] = 2*np.pi/(ells[1:]*(ells[1:]+1.))
-    ##        cl2dl = (ells*(ells+1.))/(2*np.pi)
-    ##        #cl_bb_gaus *= dl2cl
-    ##        #cl_bb_pysm *= dl2cl
-    ##    
-    ##        dls_gaus_s.append(dl_bb_gaus_s)
-    ##        dls_pysm_s.append(dl_bb_pysm_s)
-    ##        dls_gaus_d.append(dl_bb_gaus_d)
-    ##        dls_pysm_d.append(dl_bb_pysm_d)
-    ##        dls_gaus_ds.append(dl_bb_gaus_ds)
-    ##        dls_pysm_ds.append(dl_bb_pysm_ds)
-    ##        ls.append(ell_eff)
-    ##
-    ##ls = np.asarray(ls)
-    ##dls_gaus_s = np.asarray(dls_gaus_s)
-    ##dls_pysm_s = np.asarray(dls_pysm_s)
-    ##dls_gaus_d = np.asarray(dls_gaus_d)
-    ##dls_pysm_d = np.asarray(dls_pysm_d)
-    ##dls_gaus_ds = np.asarray(dls_gaus_ds)
-    ##dls_pysm_ds = np.asarray(dls_pysm_ds)
-    ##
-    ##np.savetxt("Outputs_compare_cls_Pysm_vs_Gaus/ls.txt", ls)
-    ##np.savetxt("Outputs_compare_cls_Pysm_vs_Gaus/dls_gaus_s.txt", dls_gaus_s)
-    ##np.savetxt("Outputs_compare_cls_Pysm_vs_Gaus/dls_pysm_s.txt", dls_pysm_s)
-    ##np.savetxt("Outputs_compare_cls_Pysm_vs_Gaus/dls_gaus_d.txt", dls_gaus_d)
-    ##np.savetxt("Outputs_compare_cls_Pysm_vs_Gaus/dls_pysm_d.txt", dls_pysm_d)
-    ##np.savetxt("Outputs_compare_cls_Pysm_vs_Gaus/dls_gaus_ds.txt", dls_gaus_ds)
-    ##np.savetxt("Outputs_compare_cls_Pysm_vs_Gaus/dls_pysm_ds.txt", dls_pysm_ds)
+    open("Outputs_compare_cls_Pysm_vs_Gaus/ls.txt", 'w')
+    open('Outputs_compare_cls_Pysm_vs_Gaus/dls_gaus_s.txt', 'w')                                                                                             
+    open('Outputs_compare_cls_Pysm_vs_Gaus/dls_gaus_d.txt', 'w')                                                                                             
+    open('Outputs_compare_cls_Pysm_vs_Gaus/dls_gaus_ds.txt', 'w')                                                                                       
+    open('Outputs_compare_cls_Pysm_vs_Gaus/dls_pysm_s.txt', 'w')                                                                                             
+    open('Outputs_compare_cls_Pysm_vs_Gaus/dls_pysm_d.txt', 'w')                                                                                             
+    open('Outputs_compare_cls_Pysm_vs_Gaus/dls_pysm_ds.txt', 'w')
+    dls_gaus_s = []
+    dls_pysm_s = []
+    dls_gaus_d = []
+    dls_pysm_d = []
+    dls_gaus_ds = []
+    dls_pysm_ds = []
+    ls = []
+    for i in np.arange(0, 12, 2):
+        j=i+1
+        for k in np.arange(i, 12, 2):
+            l=k+1
+            ''' Write the dls arrrays to disk
+            order: 1x1, 1x2, 1x3, 1x4, 1x5, 1x6,
+                        2x2, 2x3, 2x4, 2x5, 2x6,
+                             3x3, 3x4, 3x5, 3x6,
+                                  4x4, 4x5, 4x6,
+                                       5x5, 5x6,
+                                            6x6.'''        
+            print('Selecting map fields')
+            print('i j k l')
+            print(i, j, k, l)
+            print('Computing Dl at cross frequencies')        
+            print('nu1 nu2')
+            print((i+2)//2, (k+2)//2)
+            print('-------------------')
+        
+            ell_eff, dl_ee_pysm_s, dl_bb_pysm_s = map2dl(mask, maps_pysm_s, i,j,k,l)
+            _, dl_ee_gaus_s, dl_bb_gaus_s = map2dl(mask, maps_gaus_s, i,j,k,l)
+        
+            _, dl_ee_pysm_d, dl_bb_pysm_d = map2dl(mask, maps_pysm_d, i,j,k,l)
+            _, dl_ee_gaus_d, dl_bb_gaus_d = map2dl(mask, maps_gaus_d, i,j,k,l)
+        
+            _, dl_ee_pysm_ds, dl_bb_pysm_ds = map2dl(mask, maps_pysm_ds,i,j,k,l)
+            _, dl_ee_gaus_ds, dl_bb_gaus_ds = map2dl(mask, maps_gaus_ds, i,j,k,l)
+    
+            ells=ell_eff
+            dl2cl = np.ones(len(ells))
+            dl2cl[1:] = 2*np.pi/(ells[1:]*(ells[1:]+1.))
+            cl2dl = (ells*(ells+1.))/(2*np.pi)
+            #cl_bb_gaus *= dl2cl
+            #cl_bb_pysm *= dl2cl
+        
+            dls_gaus_s.append(dl_bb_gaus_s)
+            dls_pysm_s.append(dl_bb_pysm_s)
+            dls_gaus_d.append(dl_bb_gaus_d)
+            dls_pysm_d.append(dl_bb_pysm_d)
+            dls_gaus_ds.append(dl_bb_gaus_ds)
+            dls_pysm_ds.append(dl_bb_pysm_ds)
+            ls.append(ell_eff)
+    
+    ls = np.asarray(ls)
+    dls_gaus_s = np.asarray(dls_gaus_s)
+    dls_pysm_s = np.asarray(dls_pysm_s)
+    dls_gaus_d = np.asarray(dls_gaus_d)
+    dls_pysm_d = np.asarray(dls_pysm_d)
+    dls_gaus_ds = np.asarray(dls_gaus_ds)
+    dls_pysm_ds = np.asarray(dls_pysm_ds)
+    
+    np.savetxt("Outputs_compare_cls_Pysm_vs_Gaus/ls.txt", ls)
+    np.savetxt("Outputs_compare_cls_Pysm_vs_Gaus/dls_gaus_s.txt", dls_gaus_s)
+    np.savetxt("Outputs_compare_cls_Pysm_vs_Gaus/dls_pysm_s.txt", dls_pysm_s)
+    np.savetxt("Outputs_compare_cls_Pysm_vs_Gaus/dls_gaus_d.txt", dls_gaus_d)
+    np.savetxt("Outputs_compare_cls_Pysm_vs_Gaus/dls_pysm_d.txt", dls_pysm_d)
+    np.savetxt("Outputs_compare_cls_Pysm_vs_Gaus/dls_gaus_ds.txt", dls_gaus_ds)
+    np.savetxt("Outputs_compare_cls_Pysm_vs_Gaus/dls_pysm_ds.txt", dls_pysm_ds)
 else:
     ls = np.loadtxt("Outputs_compare_cls_Pysm_vs_Gaus/ls.txt")
     dls_gaus_s = np.loadtxt("Outputs_compare_cls_Pysm_vs_Gaus/dls_gaus_s.txt")
