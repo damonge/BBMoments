@@ -1,7 +1,6 @@
 import utils as ut
 import healpy as hp
 import numpy as np
-import matplotlib.pyplot as plt
 import os
 from optparse import OptionParser
 
@@ -20,11 +19,11 @@ parser.add_option('--gamma-dust', dest='gamma_dust', default=-3., type=float,
                   help='Exponent of the beta dust power law, default=-3.')
 parser.add_option('--gamma-sync', dest='gamma_sync', default=-3., type=float,
                   help='Exponent of the beta sync power law, default=-3.')
-parser.add_option('--remove-cmb', dest='include_cmb', default=True, action='store_false',
+parser.add_option('--include-cmb', dest='include_cmb', default=True, action='store_false',
                   help='Set to remove CMB from simulation, default=True.')
-parser.add_option('--remove-sync', dest='include_sync', default=True, action='store_false',
+parser.add_option('--include-sync', dest='include_sync', default=True, action='store_false',
                   help='Set to remove synchrotron from simulation, default=True.')
-parser.add_option('--remove-dust', dest='include_dust', default=True, action='store_false',
+parser.add_option('--include-dust', dest='include_dust', default=True, action='store_false',
                   help='Set to remove dust from simulation, default=True.')
 parser.add_option('--include-E', dest='include_E', default=True, action='store_false',
                   help='Set to remove E-modes from simulation, default=True.')
@@ -38,14 +37,16 @@ parser.add_option('--nu0-dust', dest='nu0_dust', default=353., type=int,
                   help='Set to change dust pivot frequency, default=353 GHz.')
 parser.add_option('--nu0-sync', dest='nu0_sync', default=23., type=int,
                   help='Set to change synchrotron pivot frequency, default=23 GHz.')
-parser.add_option('--A-dust-BB', dest='Ad', default=5, type=int,
+parser.add_option('--A-dust-BB', dest='Ad', default=5, type=float,
                   help='Set to modify the B-mode dust power spectrum amplitude, default=5')
 parser.add_option('--alpha-dust-BB', dest='alpha_d', default=-0.42, type=float,
                   help='Set to mofify tilt in D_l^BB for dust, default=-0.42')
-parser.add_option('--A-sync-BB', dest='As', default=2, type=int,
+parser.add_option('--A-sync-BB', dest='As', default=2, type=float,
                   help='Set to modify the B-mode dust power spectrum amplitude, default=2')
 parser.add_option('--alpha-sync-BB', dest='alpha_s', default=-0.6, type=float,
                   help='Set to mofify tilt in D_l^BB for synchrotron, default=-0.42')
+parser.add_option('--plaw-amp', dest='plaw_amps', default=True, action='store_false',
+                  help='Set to use realistic amplitude maps for dust and synchrotron.')
 (o, args) = parser.parse_args()
 
 nside = o.nside
@@ -54,7 +55,10 @@ seed = o.seed
 if o.dirname == 'none':
     #o.dirname = "/mnt/extraspace/susanna/BBMoments/Simulations_Moments/sim_ns%d" % o.nside
     #o.dirname = "/mnt/extraspace/susanna/BBMoments/Simulations_Moments_shiftednu0s_try2/sim_ns%d" % o.nside
-    o.dirname = "/mnt/extraspace/susanna/BBMoments/Simulations_Moments_realisticPySMsims_updated/sim_ns%d" % o.nside
+    #o.dirname = "/mnt/extraspace/susanna/BBMoments/Simulations_Moments_realisticPySMsims_updated/sim_ns%d" % o.nside
+    #####o.dirname = "/mnt/extraspace/susanna/BBMoments/Simulations_Moments_realAmpsBetas_FITVALUES/sim_ns%d" % o.nside
+    #o.dirname = "/mnt/zfsusers/susanna/PySM-tests2/Nmt_compare_Cls/FITS_sim_ns%d" % o.nside
+    o.dirname = "./FITS2_sim_ns%d" % o.nside
     o.dirname+= "_seed%d" % o.seed
     o.dirname+= "_stdd%d_stds%d"%(o.std_dust*100, o.std_sync*100)
     o.dirname+= "_gdm%.1lf_gsm%.1lf"%(-int(o.gamma_dust), -int(o.gamma_sync))
@@ -71,6 +75,13 @@ if o.dirname == 'none':
     if not o.plaw_amps:
         o.dirname+= "_realAmps"
     o.dirname+= "_nu0d%d_nu0s%d" %(o.nu0_dust, o.nu0_sync)
+    if o.include_cmb:
+        o.dirname+= "_cmb"
+    if o.include_dust:
+        o.dirname+= "_dust"
+    if o.include_sync:
+        o.dirname+= "_sync"
+    o.dirname+= "_Ad%d" %(o.Ad)
 os.system('mkdir -p ' + o.dirname)
 print(o.dirname)
 
@@ -130,6 +141,14 @@ npol = 2
 nmaps = nfreq*npol
 npix = hp.nside2npix(o.nside)
 hp.write_map(o.dirname+"/maps_sky_signal.fits", mps_signal.reshape([nmaps,npix]),
+             overwrite=True)
+
+###Added
+mps_dust_amp = sim['maps_dust']
+mps_sync_amp = sim['maps_sync']
+hp.write_map(o.dirname+"/maps_dust_QU.fits", mps_dust_amp,
+             overwrite=True)
+hp.write_map(o.dirname+"/maps_sync_QU.fits", mps_sync_amp,
              overwrite=True)
 
 # Create splits

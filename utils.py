@@ -93,7 +93,6 @@ def bin_cls(cls, delta_ell=10):
     cl_binned = np.dot(cls, W.T)
     return l_eff, W, cl_binned
 
-
 def map2cl(maps, maps2=None, iter=0):
     """ Returns an array with all auto- and cross-correlations
     for a given set of Q/U frequency maps.
@@ -328,7 +327,6 @@ def get_mean_spectra(lmax, mean_pars):
                                                    mean_pars['nu0_sync_def'],
                                                    mean_pars['beta_sync'],
                                                    None, 'sync'))**2
-    #print(A_dust_BB, A_sync_BB)
           
     # Dust amplitudes
     A_dust_BB = A_dust_BB * fcmb(mean_pars['nu0_dust_def'])**2
@@ -555,6 +553,16 @@ def get_theory_spectra(nside, mean_pars=None, moment_pars=None, delta_ell=10, ad
                 'windows': windows}
     return dict_out
 
+def qu2eb(QU, nside, lmax=None):
+    """ Generate EB maps from QU maps """
+    alms = hp.map2alm(QU, lmax=lmax, pol=False)
+    return hp.alm2map(alms, nside=nside, lmax=lmax, pol=False)
+
+def eb2qu(EB, nside, lmax=None):
+    """ Generate QU maps from EB maps"""
+    alms = hp.map2alm(EB, lmax=lmax, pol=False)
+    return hp.alm2map(alms, nside=nside, lmax=lmax, pol=False)
+
 def get_sky_realization(nside, plaw_amps=True, gaussian_betas=True, seed=None,
                         mean_pars=None, moment_pars=None,compute_cls=False,
                         delta_ell=10):
@@ -604,16 +612,38 @@ def get_sky_realization(nside, plaw_amps=True, gaussian_betas=True, seed=None,
                                     nside, new=True, verbose=False)[1:]
     else:
         # Dust amplitudes:
-        Q_dust = hp.ud_grade(hp.read_map("./data/dust_QU_equatorial.fits", verbose=False, field=0), nside_out=nside)
-        U_dust = hp.ud_grade(hp.read_map("./data/dust_QU_equatorial.fits", verbose=False, field=1), nside_out=nside)
-        # Sync amplitudes
-        Q_sync = hp.ud_grade(hp.read_map("./data/synch_QU_equatorial.fits", verbose=False, field=0), nside_out=nside)
-        U_sync = hp.ud_grade(hp.read_map("./data/synch_QU_equatorial.fits", verbose=False, field=1), nside_out=nside)
+        QU_dust = hp.ud_grade(hp.read_map("./data/dust_QU_equatorial.fits", verbose=False, field=[0,1]), nside_out=nside)
+        # Sync amplitudes:
+        QU_sync = hp.ud_grade(hp.read_map("./data/synch_QU_equatorial.fits", verbose=False, field=[0,1]), nside_out=nside)
+
+        lmax = 3*nside-1
+        EB_dust = qu2eb(QU_dust, nside, lmax)
+        EB_sync= qu2eb(QU_sync, nside, lmax)
+
+        if not mean_pars['include_E']:
+            EB_dust[0] *= 0
+            EB_sync[0] *= 0
+        if not mean_pars['include_B']:
+            EB_dust[1] *= 0
+            EB_sync[1] *= 0
+
+        Q_dust, U_dust = eb2qu(EB_dust, nside, lmax)
+        Q_sync, U_sync = eb2qu(EB_sync, nside, lmax)
         
     # CMB amplitude
     Q_cmb, U_cmb = hp.synfast([cl0, cl_cmb_ee, cl_cmb_bb, cl0, cl0, cl0],
                               nside, new=True, verbose=False)[1:]
 
+    if not mean_pars['include_dust']:
+        Q_dust *= 0
+        U_dust *= 0
+    if not mean_pars['include_sync']:
+        Q_sync *= 0
+        U_sync *= 0
+    if not mean_pars['include_CMB']:
+        Q_cmb *= 0
+        U_cmb *= 0
+    
     # Dust and Synchrotron spectral indices
     if gaussian_betas:
         beta_dust = get_beta_map(nside,
