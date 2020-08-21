@@ -31,6 +31,8 @@ parser.add_option('--include-B', dest='include_B', default=True, action='store_f
                   help='Set to remove B-modes from simulation, default=True.')
 parser.add_option('--mask', dest='add_mask', default=False, action='store_true',
                   help='Set to add mask to observational splits, default=False.')
+parser.add_option('--dust-vansyngel', dest='dust_vansyngel', default=False, action='store_true',
+                  help='Set to use Vansyngel et al\'s dust model, default=False.')
 parser.add_option('--beta', dest='gaussian_beta', default=True, action='store_false',
                   help='Set for non-gaussian beta variation.')
 parser.add_option('--nu0-dust', dest='nu0_dust', default=353., type=int,
@@ -106,7 +108,10 @@ if o.std_sync > 0. :
 # Which components do we want to include?
 mean_p['include_CMB'] = o.include_cmb
 mean_p['include_sync'] = o.include_sync
-mean_p['include_dust'] = o.include_dust
+if o.dust_vansyngel:
+    mean_p['include_dust'] = False
+else:
+    mean_p['include_dust'] = o.include_dust
 
 # Which polarizations do we want to include?
 mean_p['include_E'] = o.include_E
@@ -138,6 +143,13 @@ scc.saveToHDF(o.dirname+"/cells_model.sacc")
 sim = ut.get_sky_realization(o.nside, seed=o.seed, mean_pars=mean_p,
                              moment_pars=moment_p, gaussian_betas=o.gaussian_beta,
                              plaw_amps=o.plaw_amps, compute_cls=True)
+if o.dust_vansyngel:
+    import utils_vansyngel as uv
+    nus = ut.get_freqs()
+    qd, ud = uv.get_dust_sim(nus, o.nside)
+    print(sim['freq_maps'].shape)
+    print(qd.shape)
+    exit(1)
 noi = ut.create_noise_splits(o.nside)
 
 # Define maps signal and noise
