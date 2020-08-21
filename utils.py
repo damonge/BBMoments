@@ -276,7 +276,8 @@ def get_default_params():
           beta power spectrum is non-zero (2).
       - A copy of the above for synchrotron.
     """
-    mean_pars = {'A_dust_BB': 5,
+    mean_pars = {'r_tensor': 0,
+                 'A_dust_BB': 5,
                  'EB_dust': 2.,
                  'alpha_dust_EE': -0.42,
                  'alpha_dust_BB': -0.42,
@@ -297,6 +298,7 @@ def get_default_params():
                  'include_sync': True,
                  'include_E': True,
                  'include_B': True,
+                 'dust_SED': 'mbb',
     }
     moment_pars = {'amp_beta_sync': 0.,
                    'gamma_beta_sync': -3.,
@@ -359,6 +361,7 @@ def get_mean_spectra(lmax, mean_pars):
         cl_sync_ee *= 0
 
     # CMB amplitude
+    # Lensing
     l,dtt,dee,dbb,dte=np.loadtxt("data/camb_lens_nobb.dat",unpack=True)
     l = l.astype(int)
     msk = l <= lmax
@@ -367,16 +370,37 @@ def get_mean_spectra(lmax, mean_pars):
     dlee=np.zeros(len(ells)); dlee[l]=dee[msk]
     dlbb=np.zeros(len(ells)); dlbb[l]=dbb[msk]
     dlte=np.zeros(len(ells)); dlte[l]=dte[msk]  
-    cl_cmb_bb=dlbb * dl2cl
-    cl_cmb_ee=dlee * dl2cl
+    cl_cmb_bb_lens=dlbb * dl2cl
+    cl_cmb_ee_lens=dlee * dl2cl
     if not mean_pars['include_E']:
-        cl_cmb_ee *= 0 
+        cl_cmb_ee_lens *= 0 
     if not mean_pars['include_B']:
-        cl_cmb_bb *= 0
+        cl_cmb_bb_lens *= 0
     if not mean_pars['include_CMB']:
-        cl_cmb_bb *= 0
-        cl_cmb_ee *= 0
+        cl_cmb_bb_lens *= 0
+        cl_cmb_ee_lens *= 0
 
+    # Lensing + r=1
+    l,dtt,dee,dbb,dte=np.loadtxt("data/camb_lens_r1.dat",unpack=True)
+    l = l.astype(int)
+    msk = l <= lmax
+    l = l[msk]
+    dltt=np.zeros(len(ells)); dltt[l]=dtt[msk]
+    dlee=np.zeros(len(ells)); dlee[l]=dee[msk]
+    dlbb=np.zeros(len(ells)); dlbb[l]=dbb[msk]
+    dlte=np.zeros(len(ells)); dlte[l]=dte[msk]  
+    cl_cmb_bb_r1=dlbb * dl2cl
+    cl_cmb_ee_r1=dlee * dl2cl
+    if not mean_pars['include_E']:
+        cl_cmb_ee_r1 *= 0 
+    if not mean_pars['include_B']:
+        cl_cmb_bb_r1 *= 0
+    if not mean_pars['include_CMB']:
+        cl_cmb_bb_r1 *= 0
+        cl_cmb_ee_r1 *= 0
+
+    cl_cmb_ee = cl_cmb_ee_lens + mean_pars['r_tensor'] * (cl_cmb_ee_r1-cl_cmb_ee_lens)
+    cl_cmb_bb = cl_cmb_bb_lens + mean_pars['r_tensor'] * (cl_cmb_bb_r1-cl_cmb_bb_lens)
     return(#A_dust_BB/fcmb(mean_pars['nu0_dust_def'])**2,
            #A_sync_BB/fcmb(mean_pars['nu0_sync_def'])**2,
            #fcmb(mean_pars['nu0_dust_def'])**2,
@@ -670,14 +694,19 @@ def get_sky_realization(nside, plaw_amps=True, gaussian_betas=True, seed=None,
     # Create PySM simulation
     zeromap = np.zeros(npix)
     # Dust
-    d2 = models("d2", nside)
+    if mean_pars['dust_SED'] == 'mbb':
+        d2 = models("d2", nside)
+        d2[0]['spectral_index'] = beta_dust
+        d2[0]['temp'] = temp_dust
+    elif mean_pars['dust_SED'] == 'hensley_draine':
+        d2 = models("d5", nside)
+    else:
+        raise ValueError("Unknown SED %s " % mean_pars['dust_SED'])
     d2[0]['nu_0_I'] = mean_pars['nu0_dust']
     d2[0]['nu_0_P'] = mean_pars['nu0_dust']
     d2[0]['A_I'] = zeromap
     d2[0]['A_Q'] = Q_dust
     d2[0]['A_U'] = U_dust
-    d2[0]['spectral_index'] = beta_dust
-    d2[0]['temp'] = temp_dust
     # Sync
     s1 = models("s1", nside)
     s1[0]['nu_0_I'] = mean_pars['nu0_sync']

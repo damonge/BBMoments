@@ -47,6 +47,10 @@ parser.add_option('--alpha-sync-BB', dest='alpha_s', default=-0.6, type=float,
                   help='Set to mofify tilt in D_l^BB for synchrotron, default=-0.42')
 parser.add_option('--plaw-amp', dest='plaw_amps', default=True, action='store_false',
                   help='Set to use realistic amplitude maps for dust and synchrotron.')
+parser.add_option('--r-tensor', dest='r_tensor', default=0.0, type=float,
+                  help='Set to mofify tensor-to-scalar ratio')
+parser.add_option('--dust-sed', dest='dust_sed', default='mbb', type=str,
+                  help='Dust SED (\'mbb\' or \'hensley_draine\')')
 (o, args) = parser.parse_args()
 
 nside = o.nside
@@ -107,6 +111,12 @@ mean_p['include_dust'] = o.include_dust
 # Which polarizations do we want to include?
 mean_p['include_E'] = o.include_E
 mean_p['include_B'] = o.include_B
+
+# Modify r
+mean_p['r_tensor'] = o.r_tensor
+
+# Dust SED
+mean_p['dust_SED'] = o.dust_sed
 
 # Modify template plaws for dust and sync
 # i.e. define amp_d_bb, amp_s_bb, alpha_s, alpha_d
