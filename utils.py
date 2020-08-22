@@ -580,12 +580,14 @@ def get_theory_spectra(nside, mean_pars=None, moment_pars=None, delta_ell=10, ad
 def qu2eb(QU, nside, lmax=None):
     """ Generate EB maps from QU maps """
     alms = hp.map2alm(QU, lmax=lmax, pol=False)
-    return hp.alm2map(alms, nside=nside, lmax=lmax, pol=False)
+    return hp.alm2map(alms, nside=nside, lmax=lmax, pol=False,
+                      verbose=False)
 
 def eb2qu(EB, nside, lmax=None):
     """ Generate QU maps from EB maps"""
     alms = hp.map2alm(EB, lmax=lmax, pol=False)
-    return hp.alm2map(alms, nside=nside, lmax=lmax, pol=False)
+    return hp.alm2map(alms, nside=nside, lmax=lmax, pol=False,
+                      verbose=False)
 
 def get_sky_realization(nside, plaw_amps=True, gaussian_betas=True, seed=None,
                         mean_pars=None, moment_pars=None,compute_cls=False,

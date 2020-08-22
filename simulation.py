@@ -108,10 +108,7 @@ if o.std_sync > 0. :
 # Which components do we want to include?
 mean_p['include_CMB'] = o.include_cmb
 mean_p['include_sync'] = o.include_sync
-if o.dust_vansyngel:
-    mean_p['include_dust'] = False
-else:
-    mean_p['include_dust'] = o.include_dust
+mean_p['include_dust'] = o.include_dust
 
 # Which polarizations do we want to include?
 mean_p['include_E'] = o.include_E
@@ -140,16 +137,34 @@ thr = ut.get_theory_spectra(o.nside, mean_pars=mean_p,
 scc = ut.get_theory_sacc(o.nside, mean_pars=mean_p,
                          moment_pars=moment_p, add_11=True, add_02=True)
 scc.saveToHDF(o.dirname+"/cells_model.sacc")
-sim = ut.get_sky_realization(o.nside, seed=o.seed, mean_pars=mean_p,
-                             moment_pars=moment_p, gaussian_betas=o.gaussian_beta,
-                             plaw_amps=o.plaw_amps, compute_cls=True)
+
+if o.dust_vansyngel:
+    mean_p['include_dust'] = False
+sim = ut.get_sky_realization(o.nside, seed=o.seed,
+                             mean_pars=mean_p,
+                             moment_pars=moment_p,
+                             gaussian_betas=o.gaussian_beta,
+                             plaw_amps=o.plaw_amps,
+                             compute_cls=True)
 if o.dust_vansyngel:
     import utils_vansyngel as uv
     nus = ut.get_freqs()
-    qd, ud = uv.get_dust_sim(nus, o.nside)
-    print(sim['freq_maps'].shape)
-    print(qd.shape)
-    exit(1)
+    qud = np.transpose(np.array(uv.get_dust_sim(nus, o.nside)),
+                       axes=[1, 0, 2])
+    units = ut.fcmb(nus)
+    qud = qud/units[:, None, None]
+
+    lmax = 3*o.nside-1
+    if not (mean_p['include_E'] and mean_p['include_B']):
+        for inu, nu in enumerate(nus):
+            ebd = ut.qu2eb(qud[inu], o.nside, lmax)
+            if not mean_p['include_E']:
+                ebd[0] *= 0
+            if not mean_p['include_B']:
+                ebd[1] *= 0
+            qud[inu, :, :] = ut.eb2qu(ebd, o.nside, lmax)
+    sim['freq_maps'] += qud
+
 noi = ut.create_noise_splits(o.nside)
 
 # Define maps signal and noise
